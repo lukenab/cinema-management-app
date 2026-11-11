@@ -15,6 +15,7 @@ import type {
   CatalogConcession,
   Cluster,
   ConcessionCartItem,
+  MovieEligibility,
   MovieStatus,
   PaymentSession,
   PriceBook,
@@ -464,6 +465,17 @@ export const api = createApi({
       transformResponse: (res: SchedulingRunSummary[]) => res ?? [],
       providesTags: ["Runs"],
     }),
+    getSchedulingEligibility: build.query<
+      MovieEligibility[],
+      { startDate: string; endDate: string; clusterIds: number[] }
+    >({
+      query: ({ startDate, endDate, clusterIds }) => ({
+        url: "/api/admin/scheduling-eligibility",
+        params: { startDate, endDate, clusterIds: clusterIds.join(",") },
+      }),
+      // Movies and their release plans change in other screens.
+      providesTags: ["Plans", "AdminMovies"],
+    }),
     getSchedulingRun: build.query<SchedulingRunDetail, number>({
       query: (runId) => ({ url: `/api/admin/scheduling-runs/${runId}` }),
       providesTags: (_r, _e, id) => [{ type: "Runs", id }],
@@ -651,6 +663,7 @@ export const {
   useDeleteReleasePlanMutation,
   useGetSchedulingRunsQuery,
   useGetSchedulingRunQuery,
+  useGetSchedulingEligibilityQuery,
   useRunSchedulingMutation,
   usePublishSchedulingRunMutation,
   useDiscardSchedulingRunMutation,

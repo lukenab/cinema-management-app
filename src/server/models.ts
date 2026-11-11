@@ -328,6 +328,19 @@ export interface GenerationRunDoc {
     reason: SkipReason;
   }[];
   perDay: { date: string; selected: number }[];
+  /** What each movie × cinema pairing got in this run (absent on runs made before the report listed it). */
+  matrix?: {
+    movieId: number;
+    clusterId: number;
+    selected: number;
+    rejected: number;
+    /** Days the pairing was skipped before any slot was built, and why. */
+    excludedDays: number;
+    excludedReasons: Partial<Record<SkipReason, number>>;
+    /** Days the cinema may show the movie in this run (its release plan, inside the chosen range). */
+    from?: string;
+    to?: string;
+  }[];
   exclusions: {
     movieId: number;
     clusterId: number;

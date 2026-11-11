@@ -472,6 +472,65 @@ export interface SchedulingRunSummary {
   createdAt: string;
 }
 
+export type MovieOutcome = 'CREATED' | 'PARTIAL' | 'NONE';
+
+export interface SchedulingMovieResult {
+  movieId: number;
+  title: string;
+  posterUrl?: string;
+  /** CREATED: every cinema that could show it got showtimes. PARTIAL: some did not. NONE: no showtime at all. */
+  outcome: MovieOutcome;
+  selected: number;
+  candidates: number;
+  rejected: number;
+  clusters: {
+    clusterId: number;
+    name: string;
+    selected: number;
+    rejected: number;
+    excludedDays: number;
+    excludedReason?: SkipReason;
+    /** Days the cinema may show the movie in this run (release plan inside the chosen dates). */
+    from?: string;
+    to?: string;
+    /** False when the cinema had no release plan covering the dates, so it was never a candidate. */
+    applicable: boolean;
+  }[];
+  days: { date: string; selected: number }[];
+}
+
+export interface SchedulingShowtime {
+  showTimeId: number;
+  movieId: number;
+  movieTitle?: string;
+  clusterId: number;
+  clusterName: string;
+  roomName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  format: string;
+  price: number;
+  vipPrice?: number;
+  status: ShowtimeStatus;
+}
+
+export type EligibilityReason = 'NO_PLAN' | 'PLAN_NOT_OPEN' | 'PLAN_OUTSIDE_RANGE' | 'NOT_RELEASED';
+
+/** Whether an approved movie can get showtimes for the chosen dates and cinemas. */
+export interface MovieEligibility {
+  movieId: number;
+  title: string;
+  posterUrl?: string;
+  durationMinutes?: number;
+  releaseDate?: string;
+  eligible: boolean;
+  reason?: EligibilityReason;
+  message?: string;
+  clusters: { clusterId: number; name: string; from: string; to: string }[];
+  otherClusters: { clusterId: number; name: string }[];
+}
+
 export interface SchedulingRunDetail extends SchedulingRunSummary {
   policy: Record<string, number | string>;
   rejectedByReason: Partial<Record<SkipReason, number>>;
@@ -492,6 +551,11 @@ export interface SchedulingRunDetail extends SchedulingRunSummary {
   }[];
   perDay: { date: string; selected: number }[];
   showtimeStatus: Record<string, number>;
+  /** How each movie did: showtimes per cinema and per day, and why a cinema got none. */
+  movieResults: SchedulingMovieResult[];
+  /** The showtimes this run created (as they are now). */
+  showtimes: SchedulingShowtime[];
+  showtimesTruncated: boolean;
   rejectionSamples: {
     movieId: number;
     movieTitle?: string;

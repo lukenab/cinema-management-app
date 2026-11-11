@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 
+import { MovieResults, ShowtimeList } from '@/components/RunResults';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppText, Badge, Button, Card, Chip, ErrorView, LoadingView, Screen } from '@/components/ui';
 import { formatShortDate } from '@/lib/format';
@@ -97,7 +98,7 @@ export default function RunReport() {
             <Stat label="Không đủ điều kiện (phim·rạp·ngày)" value={r.summary.excluded.toLocaleString('vi-VN')} />
           </View>
           <AppText variant="caption">
-            {r.clusters.map((c) => c.name.replace('CinePrime ', '')).join(', ')} · {r.movies.length} phim · chạy trong {r.summary.durationMs} ms · tạo bởi {r.createdBy}
+            {r.movieResults.filter((m) => m.selected > 0).length}/{r.movieResults.length} phim đã có suất · {r.clusters.map((c) => c.name.replace('CinePrime ', '')).join(', ')} · chạy trong {r.summary.durationMs} ms · tạo bởi {r.createdBy}
           </AppText>
           <AppText variant="caption">
             Chính sách: mỗi {String(r.policy.timeSlotIntervalMinutes)} phút một mốc, dọn phòng {String(r.policy.cleanupMinutes)} phút, cùng phim cách nhau ≥{' '}
@@ -113,6 +114,10 @@ export default function RunReport() {
           <Button title="Xem lịch chiếu" variant="secondary" onPress={() => router.push({ pathname: '/admin/schedule', params: { date: r.startDate } })} />
         </Card>
 
+        <MovieResults r={r} />
+
+        <ShowtimeList r={r} />
+
         <Card style={{ gap: spacing.md }}>
           <AppText style={{ fontSize: 15, fontWeight: '700' }}>Suất được chọn theo ngày</AppText>
           {r.perDay.map((d) => <BarRow key={d.date} label={formatShortDate(d.date)} value={d.selected} max={maxDay} />)}
@@ -122,13 +127,6 @@ export default function RunReport() {
           <AppText style={{ fontSize: 15, fontWeight: '700' }}>Theo rạp</AppText>
           {r.perCluster.map((c) => (
             <BarRow key={c.clusterId} label={c.name} value={c.selected} max={Math.max(...r.perCluster.map((x) => x.selected), 0)} detail={`${c.selected}/${c.candidates} ứng viên được chọn · ${c.rejected} bị loại`} />
-          ))}
-        </Card>
-
-        <Card style={{ gap: spacing.md }}>
-          <AppText style={{ fontSize: 15, fontWeight: '700' }}>Theo phim</AppText>
-          {r.perMovie.map((m) => (
-            <BarRow key={m.movieId} label={m.title} value={m.selected} max={Math.max(...r.perMovie.map((x) => x.selected), 0)} detail={m.candidates ? `${m.selected}/${m.candidates} ứng viên được chọn` : 'Không có ứng viên (xem mục Không đủ điều kiện)'} />
           ))}
         </Card>
 

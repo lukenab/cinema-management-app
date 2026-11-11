@@ -38,15 +38,18 @@ try {
   console.log(`Done: ${result.imported.length} imported, ${result.existing} already present, ${result.skipped.length} skipped.`);
 
   const cinemas = await call('/api/admin/cinemas', undefined, token);
-  const movies = (await call('/api/admin/movies?status=APPROVED', undefined, token)).filter((m) => m.openPlans > 0);
-  const run = await call(
-    '/api/admin/scheduling-runs',
-    { startDate: vnDate(), endDate: vnDate(days - 1), clusterIds: cinemas.map((c) => c.clusterId), movieIds: movies.map((m) => m.movieId), publish: true },
-    token,
-  );
+  const startDate = vnDate();
+  const endDate = vnDate(days - 1);
+  // Only movies with an open release plan at these cinemas inside the dates can get showtimes.
+  const clusterIds = cinemas.map((c) => c.clusterId);
+  const eligibility = await call(`/api/admin/scheduling-eligibility?startDate=${startDate}&endDate=${endDate}&clusterIds=${clusterIds.join(',')}`, undefined, token);
+  const movies = eligibility.filter((m) => m.eligible);
+  eligibility.filter((m) => !m.eligible).forEach((m) => console.log(`  ! not scheduled ${m.title}: ${m.message}`));
+  const run = await call('/api/admin/scheduling-runs', { startDate, endDate, clusterIds, movieIds: movies.map((m) => m.movieId), publish: true }, token);
   const s = run.summary;
   console.log(`Scheduling run #${run.runId} ${run.startDate} → ${run.endDate}: ${s.selected} showtimes from ${s.candidates} candidates (${s.rejected} rejected, ${s.excluded} excluded) in ${s.durationMs} ms.`);
   run.perCluster.forEach((c) => console.log(`  ${String(c.selected).padStart(4)}  ${c.name}`));
+  run.movieResults.forEach((m) => console.log(`  ${m.outcome.padEnd(7)} ${String(m.selected).padStart(4)}  ${m.title}`));
 } catch (e) {
   console.error(`Seed failed: ${e.message}`);
   console.error(`Is the dev server running at ${API}? (npx expo start)`);

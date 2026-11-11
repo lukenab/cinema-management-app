@@ -48,6 +48,9 @@ const expect = (cond, message) => {
 };
 const expectStatus = (r, status) => expect(r.status === status, `HTTP ${r.status} (expected ${status}): ${r.json?.message ?? r.text.slice(0, 120)}`);
 const vnDate = (offset = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(Date.now() + offset * 86_400_000));
+// The scheduling checks use two days far ahead (random, 15 to 314 days out), so rooms already filled by earlier
+// runs, seeded data or a pending run do not leave the test without free slots. Set TEST_DAY_OFFSET to pin it.
+const D1 = Number(process.env.TEST_DAY_OFFSET) || 15 + Math.floor(Math.random() * 300);
 const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const skip = (why) => {
   throw new Error(`SKIPPED: ${why}`);
@@ -218,7 +221,7 @@ console.log(group);
 await test('E1', 'Run for the movie at Ninh Kiều, Cái Răng, Bình Thủy (tomorrow + 1 day), not published', async () => {
   const r = await call('POST', '/api/admin/scheduling-runs', {
     token: ctx.admin,
-    body: { startDate: vnDate(1), endDate: vnDate(2), clusterIds: [1, 2, 3], movieIds: [ctx.movie.movieId], publish: false },
+    body: { startDate: vnDate(D1), endDate: vnDate(D1 + 1), clusterIds: [1, 2, 3], movieIds: [ctx.movie.movieId], publish: false },
   });
   expectStatus(r, 201);
   ctx.run = r.result;
@@ -246,7 +249,7 @@ await test('E4', 'Generated showtimes: SCHEDULED, inside opening hours, cleanup 
   let count = 0;
   for (const clusterId of [1, 2]) {
     const cinema = ctx.cinemas.find((c) => c.clusterId === clusterId);
-    for (const date of [vnDate(1), vnDate(2)]) {
+    for (const date of [vnDate(D1), vnDate(D1 + 1)]) {
       const all = (await call('GET', `/api/admin/showtimes?date=${date}&clusterId=${clusterId}`, { token: ctx.admin })).result;
       const mine = all.filter((s) => s.generationRunId === ctx.run.runId);
       count += mine.length;
@@ -289,7 +292,7 @@ await test('E4', 'Generated showtimes: SCHEDULED, inside opening hours, cleanup 
 });
 await test('E5', 'Prices snapshotted from the price book (VIP = ×1.2, couple = ×1.15, weekend/evening rates)', async () => {
   const book = (await call('GET', '/api/admin/price-books/1', { token: ctx.admin })).result;
-  const shows = (await call('GET', `/api/admin/showtimes?date=${vnDate(1)}&clusterId=1`, { token: ctx.admin })).result.filter((s) => s.generationRunId === ctx.run.runId);
+  const shows = (await call('GET', `/api/admin/showtimes?date=${vnDate(D1)}&clusterId=1`, { token: ctx.admin })).result.filter((s) => s.generationRunId === ctx.run.runId);
   expect(shows.length, 'no showtimes');
   const r1000 = (n) => Math.round(n / 1000) * 1000;
   for (const s of shows) {
@@ -302,14 +305,14 @@ await test('E5', 'Prices snapshotted from the price book (VIP = ×1.2, couple = 
   return `${s.startTime.slice(0, 5)} ${s.formatCode}: thường ${s.seatPrices.STANDARD}, VIP ${s.seatPrices.VIP}, đôi ${s.seatPrices.COUPLE}`;
 });
 await test('E6', 'Unpublished showtimes are not bookable by customers', async () => {
-  const r = await call('GET', `/api/public/movies/${ctx.movie.movieId}/showtimes?date=${vnDate(1)}&clusterId=1`);
+  const r = await call('GET', `/api/public/movies/${ctx.movie.movieId}/showtimes?date=${vnDate(D1)}&clusterId=1`);
   expectStatus(r, 200);
   expect(r.result.length === 0, `${r.result.length} visible`);
 });
 await test('E7', 'Running the same input again does not double-book rooms or exceed the daily maximum', async () => {
   const r = await call('POST', '/api/admin/scheduling-runs', {
     token: ctx.admin,
-    body: { startDate: vnDate(1), endDate: vnDate(2), clusterIds: [1, 2], movieIds: [ctx.movie.movieId], publish: false },
+    body: { startDate: vnDate(D1), endDate: vnDate(D1 + 1), clusterIds: [1, 2], movieIds: [ctx.movie.movieId], publish: false },
   });
   expectStatus(r, 201);
   ctx.run2 = r.result;
@@ -327,7 +330,7 @@ await test('E9', 'Publish run #1 opens its showtimes; movie becomes "Đang chi�
   const r = await call('POST', `/api/admin/scheduling-runs/${ctx.run.runId}/publish`, { token: ctx.admin });
   expectStatus(r, 200);
   expect(r.result.opened === ctx.run.summary.selected, `${r.result.opened} opened`);
-  const shows = (await call('GET', `/api/public/movies/${ctx.movie.movieId}/showtimes?date=${vnDate(1)}&clusterId=1`)).result;
+  const shows = (await call('GET', `/api/public/movies/${ctx.movie.movieId}/showtimes?date=${vnDate(D1)}&clusterId=1`)).result;
   expect(shows.length > 0, 'no public showtimes');
   ctx.showtime = shows[Math.floor(shows.length / 2)];
   const nk = (await call('GET', '/api/public/movies?clusterId=1')).result.find((m) => m.movieId === ctx.movie.movieId);
@@ -340,6 +343,39 @@ await test('E10', 'Run history lists the run; run detail has samples of rejected
   const d = (await call('GET', `/api/admin/scheduling-runs/${ctx.run.runId}`, { token: ctx.admin })).result;
   expect(d.rejectionSamples.length > 0 && d.rejectionSamples[0].movieTitle, 'no samples');
   return `${d.rejectionSamples.length} mẫu, vd. ${d.rejectionSamples[0].time} ${d.rejectionSamples[0].roomName}: ${d.rejectionSamples[0].reason}`;
+});
+await test('E10a', 'Eligibility: the movie is eligible at Ninh Kiều + Cái Răng but not at Bình Thủy alone', async () => {
+  const q = (ids) => `/api/admin/scheduling-eligibility?startDate=${vnDate(D1)}&endDate=${vnDate(D1 + 1)}&clusterIds=${ids}`;
+  const wide = (await call('GET', q('1,2,3'), { token: ctx.admin })).result.find((m) => m.movieId === ctx.movie.movieId);
+  expect(wide?.eligible, `not eligible: ${wide?.message}`);
+  expect(wide.clusters.map((c) => c.clusterId).join() === '1,2', `windows ${JSON.stringify(wide.clusters)}`);
+  const narrow = (await call('GET', q('3'), { token: ctx.admin })).result.find((m) => m.movieId === ctx.movie.movieId);
+  expect(!narrow.eligible && narrow.reason === 'NO_PLAN', `reason ${narrow.reason}`);
+  expect(narrow.otherClusters.length === 2, 'should name the cinemas that do have a plan');
+  return narrow.message;
+});
+await test('E10b', 'A run with a movie that has no plan at the chosen cinemas is refused (409, code 3204) and creates nothing', async () => {
+  const before = (await call('GET', '/api/admin/scheduling-runs', { token: ctx.admin })).result.length;
+  const r = await call('POST', '/api/admin/scheduling-runs', { token: ctx.admin, body: { startDate: vnDate(D1), endDate: vnDate(D1 + 1), clusterIds: [3], movieIds: [ctx.movie.movieId], publish: false } });
+  expectStatus(r, 409);
+  expect(r.json.code === 3204, `code ${r.json.code}`);
+  expect(r.json.result.movies[0].movieId === ctx.movie.movieId && r.json.result.movies[0].reason === 'NO_PLAN', 'details');
+  const after = (await call('GET', '/api/admin/scheduling-runs', { token: ctx.admin })).result.length;
+  expect(after === before, 'a run was recorded');
+  return r.json.message;
+});
+await test('E10c', 'Report lists each movie per cinema and per day, and every showtime that was created', async () => {
+  const d = (await call('GET', `/api/admin/scheduling-runs/${ctx.run.runId}`, { token: ctx.admin })).result;
+  const m = d.movieResults.find((x) => x.movieId === ctx.movie.movieId);
+  expect(m && m.outcome === 'CREATED', `outcome ${m?.outcome}`);
+  expect(m.selected === d.summary.selected, `${m.selected} vs ${d.summary.selected}`);
+  expect(d.showtimes.length === d.summary.selected, `${d.showtimes.length} showtimes listed`);
+  const byCluster = Object.fromEntries(m.clusters.map((c) => [c.clusterId, c]));
+  expect(byCluster[1].applicable && byCluster[1].selected > 0 && byCluster[2].applicable && byCluster[2].selected > 0, 'cinemas with a plan');
+  expect(!byCluster[3].applicable && byCluster[3].selected === 0, 'Bình Thủy has no plan, so it is not applicable');
+  expect(m.days.reduce((a, x) => a + x.selected, 0) === m.selected, 'days add up');
+  expect(d.showtimes.every((s) => s.movieTitle && s.clusterName && s.startTime && s.price > 0), 'showtime fields');
+  return `${m.outcome}: ${m.clusters.filter((c) => c.applicable).map((c) => `${c.name.replace('CinePrime ', '')} ${c.selected}`).join(', ')}; ${d.showtimes.length} suất liệt kê`;
 });
 await test('E11', 'Validation: more than 14 days → 400; no approved movie → 409', async () => {
   const a = await call('POST', '/api/admin/scheduling-runs', { token: ctx.admin, body: { startDate: vnDate(), endDate: vnDate(20), clusterIds: [1], movieIds: [ctx.movie.movieId] } });
@@ -443,8 +479,14 @@ await test('G8', 'Correctly signed VNPay return confirms the booking; QR code va
   expect(page.text.includes('Thanh toán thành công'), page.text.slice(0, 200));
   const b = (await call('GET', `/api/me/bookings/${ctx.booking.bookingId}`, { token: ctx.user })).result;
   expect(b.status === 'CONFIRMED' && b.bookingCode, b.status);
-  const upcoming = (await call('GET', '/api/me/bookings?scope=upcoming', { token: ctx.user })).result.content;
-  expect(upcoming.some((x) => x.bookingId === ctx.booking.bookingId), 'not in upcoming');
+  // The ticket is for a day far ahead, so it sits on a later page of the (soonest first) upcoming list.
+  let listed = false;
+  for (let page = 0; page < 30 && !listed; page++) {
+    const res = (await call('GET', `/api/me/bookings?scope=upcoming&size=50&page=${page}`, { token: ctx.user })).result;
+    listed = res.content.some((x) => x.bookingId === ctx.booking.bookingId);
+    if (res.last) break;
+  }
+  expect(listed, 'not in upcoming');
   return `CONFIRMED, mã ${b.bookingCode}`;
 });
 await test('G9', 'Internal checkout page is off unless PAYMENT_MODE=internal', async () => {
@@ -456,7 +498,7 @@ await test('G9', 'Internal checkout page is off unless PAYMENT_MODE=internal', a
 group = 'H. AI quick booking';
 console.log(group);
 await test('H1', '"Tối mai 2 người khoảng 8h, phim gì cũng được" → ≤3 options with 2 adjacent seats and Combo Đôi', async () => {
-  const r = await call('POST', '/api/me/assistant/suggestions', { token: ctx.user, body: { message: 'Tối mai 2 người khoảng 8h, phim gì cũng được', clusterId: 1, date: vnDate(1) } });
+  const r = await call('POST', '/api/me/assistant/suggestions', { token: ctx.user, body: { message: 'Tối mai 2 người khoảng 8h, phim gì cũng được', clusterId: 1, date: vnDate(D1) } });
   expectStatus(r, 200);
   const q = r.result;
   expect(q.options.length >= 1 && q.options.length <= 3, `${q.options.length} options`);
@@ -474,7 +516,7 @@ await test('H1', '"Tối mai 2 người khoảng 8h, phim gì cũng được" �
   return `${q.source}: ${q.options.map((o) => `${o.startTime} ${o.movie.title} [${o.seats.map((s) => s.seatCode).join(',')}]`).join(' | ')}`;
 });
 await test('H2', 'Party size and time are read from Vietnamese text ("đi 4 người lúc 19:30")', async () => {
-  const r = await call('POST', '/api/me/assistant/suggestions', { token: ctx.user, body: { message: 'đi 4 người lúc 19:30', clusterId: 1, date: vnDate(1) } });
+  const r = await call('POST', '/api/me/assistant/suggestions', { token: ctx.user, body: { message: 'đi 4 người lúc 19:30', clusterId: 1, date: vnDate(D1) } });
   expectStatus(r, 200);
   expect(r.result.partySize === 4, `party ${r.result.partySize}`);
   expect(r.result.options.every((o) => o.seats.length === 4), 'seat count');

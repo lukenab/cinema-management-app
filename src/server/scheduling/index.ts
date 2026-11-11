@@ -17,6 +17,7 @@ import { resolvePrice } from "../pricing";
 import { openPlansOn } from "../releasePlans";
 import { movieTitleOf } from "../showtimes";
 import { buildCandidates } from "./candidates";
+import { type ClusterWindow, movieEligibility } from "./eligibility";
 import { scoreAndRank } from "./scorer";
 import { select } from "./selector";
 import {
@@ -63,6 +64,39 @@ export async function runScheduling(
   if (!movies.length)
     throw new HttpError(409, "Chưa chọn phim đã duyệt nào.", 3201);
   const moviesById = new Map(movies.map((m) => [m._id, m]));
+
+  // A movie needs an open release plan at one of the chosen cinemas, inside the chosen dates.
+  const eligibility = await movieEligibility(
+    db,
+    input,
+    movies.map((m) => m._id),
+  );
+  const blocked = eligibility.filter((e) => !e.eligible);
+  if (blocked.length) {
+    throw new HttpError(
+      409,
+      blocked.length === 1
+        ? `Phim "${blocked[0].title}" chưa đủ điều kiện tạo suất: ${blocked[0].message}`
+        : `${blocked.length} phim chưa đủ điều kiện tạo suất: ${blocked.map((b) => `"${b.title}"`).join(", ")}.`,
+      3204,
+      {
+        movies: blocked.map(({ movieId, title, reason, message }) => ({
+          movieId,
+          title,
+          reason,
+          message,
+        })),
+      },
+    );
+  }
+  const windowOf = new Map<string, ClusterWindow>(
+    eligibility.flatMap((e) =>
+      e.clusters.map((c): [string, ClusterWindow] => [
+        `${e.movieId}|${c.clusterId}`,
+        c,
+      ]),
+    ),
+  );
   const plans = await openPlansOn(
     db,
     input.clusterIds,
@@ -174,6 +208,41 @@ export async function runScheduling(
   const selectedPerCluster = tally(selected.map((c) => c.clusterId));
   const selectedPerDay = tally(selected.map((c) => c.date));
 
+  // Movie × cinema outcome: what each pairing got, for the report.
+  const selectedBy = tally<string>(
+    selected.map((c) => `${c.movieId}|${c.clusterId}`),
+  );
+  const rejectedBy = tally<string>(
+    allRejected.map((r) => `${r.candidate.movieId}|${r.candidate.clusterId}`),
+  );
+  const excludedBy = new Map<string, Partial<Record<SkipReason, number>>>();
+  for (const e of built.exclusions) {
+    const key = `${e.movieId}|${e.clusterId}`;
+    const reasons = excludedBy.get(key) ?? {};
+    reasons[e.reason] = (reasons[e.reason] ?? 0) + 1;
+    excludedBy.set(key, reasons);
+  }
+  const matrix: NonNullable<GenerationRunDoc["matrix"]> = movies.flatMap((m) =>
+    input.clusterIds.map((clusterId) => {
+      const key = `${m._id}|${clusterId}`;
+      const excludedReasons = excludedBy.get(key) ?? {};
+      const window = windowOf.get(key);
+      return {
+        movieId: m._id,
+        clusterId,
+        selected: selectedBy.get(key) ?? 0,
+        rejected: rejectedBy.get(key) ?? 0,
+        excludedDays: Object.values(excludedReasons).reduce(
+          (sum, n) => sum + (n ?? 0),
+          0,
+        ),
+        excludedReasons,
+        from: window?.from,
+        to: window?.to,
+      };
+    }),
+  );
+
   // A few rejections per reason, best scores first: enough to see why good slots were not taken.
   const samples: GenerationRunDoc["rejectionSamples"] = [];
   const byReason = new Map<SkipReason, Rejection[]>();
@@ -238,6 +307,7 @@ export async function runScheduling(
     perDay: Array.from({ length: days }, (_, i) =>
       addDays(input.startDate, i),
     ).map((date) => ({ date, selected: selectedPerDay.get(date) ?? 0 })),
+    matrix,
     rejectionSamples: samples,
     exclusions: built.exclusions.slice(0, MAX_EXCLUSIONS),
     selectedSamples: docs.map((d) => {
@@ -315,20 +385,128 @@ export async function listRuns(db: Db, limit = 30) {
   return rows.map((r) => runSummaryDto(r as GenerationRunDoc, titles));
 }
 
+const MAX_LISTED_SHOWTIMES = 3000;
+
+async function moviesOf(db: Db, ids: number[]) {
+  const docs = await db
+    .collection<MovieDoc>("movies")
+    .find({ _id: { $in: [...new Set(ids)] } })
+    .toArray();
+  return new Map(docs.map((m) => [m._id, m]));
+}
+
+const topReason = (reasons: Partial<Record<SkipReason, number>>) =>
+  (Object.entries(reasons) as [SkipReason, number][]).sort(
+    (a, b) => b[1] - a[1],
+  )[0]?.[0];
+
 async function runDetail(db: Db, r: GenerationRunDoc) {
-  const titles = await titlesOf(db, [
+  const movieDocs = await moviesOf(db, [
     ...r.movieIds,
     ...r.rejectionSamples.map((s) => s.movieId),
     ...r.exclusions.map((e) => e.movieId),
   ]);
-  const showtimes = await db
+  const titles = new Map(
+    [...movieDocs].map(([id, m]) => [id, movieTitleOf(m)] as const),
+  );
+
+  // The showtimes this run created, as they are now (a discarded run has none left).
+  const rows = await db
     .collection<ShowtimeDoc>("showtimes")
-    .find({ generationRunId: r._id }, { projection: { status: 1 } })
+    .find({ generationRunId: r._id })
+    .sort({ startAt: 1, roomId: 1 })
+    .limit(MAX_LISTED_SHOWTIMES)
     .toArray();
   const statusCount: Record<string, number> = {};
-  showtimes.forEach(
+  rows.forEach(
     (s) => (statusCount[s.status] = (statusCount[s.status] ?? 0) + 1),
   );
+  const showtimes = rows.map((s) => {
+    const start = vnParts(s.startAt);
+    return {
+      showTimeId: s._id,
+      movieId: s.movieId,
+      movieTitle: titles.get(s.movieId),
+      clusterId: s.clusterId,
+      clusterName: clusterNameOf(s.clusterId),
+      roomName: s.roomName,
+      date: start.date,
+      startTime: start.time.slice(0, 5),
+      endTime: vnParts(s.endAt).time.slice(0, 5),
+      format: s.format,
+      price: s.seatPrices?.STANDARD ?? s.basePrice,
+      vipPrice: s.seatPrices?.VIP,
+      status: s.status,
+    };
+  });
+
+  // Result per movie: how many showtimes it got at each cinema and on each day, and why not where it got none.
+  const liveByCell = new Map<string, number>();
+  const liveByDay = new Map<string, number>();
+  for (const s of showtimes) {
+    const cell = `${s.movieId}|${s.clusterId}`;
+    liveByCell.set(cell, (liveByCell.get(cell) ?? 0) + 1);
+    const day = `${s.movieId}|${s.date}`;
+    liveByDay.set(day, (liveByDay.get(day) ?? 0) + 1);
+  }
+  const cells = new Map<string, NonNullable<GenerationRunDoc["matrix"]>[number]>(
+    (r.matrix ?? []).map((c) => [`${c.movieId}|${c.clusterId}`, c]),
+  );
+  // Runs from before the matrix existed: the reasons come from the (capped) exclusion list.
+  const legacyReasons = new Map<string, Partial<Record<SkipReason, number>>>();
+  for (const e of r.exclusions) {
+    const key = `${e.movieId}|${e.clusterId}`;
+    const reasons = legacyReasons.get(key) ?? {};
+    reasons[e.reason] = (reasons[e.reason] ?? 0) + 1;
+    legacyReasons.set(key, reasons);
+  }
+  const dates = r.perDay.map((d) => d.date);
+  const movieResults = r.movieIds.map((movieId) => {
+    const clusters = r.clusterIds.map((clusterId) => {
+      const key = `${movieId}|${clusterId}`;
+      const cell = cells.get(key);
+      const reasons = cell?.excludedReasons ?? legacyReasons.get(key) ?? {};
+      const selected = cell?.selected ?? liveByCell.get(key) ?? 0;
+      const excludedReason = topReason(reasons);
+      return {
+        clusterId,
+        name: clusterNameOf(clusterId),
+        selected,
+        rejected: cell?.rejected ?? 0,
+        excludedDays: cell?.excludedDays ?? 0,
+        excludedReason,
+        from: cell?.from,
+        to: cell?.to,
+        /** Whether the cinema could show the movie at all in this run (it had a release plan covering the dates). */
+        applicable: cell
+          ? cell.from !== undefined
+          : selected > 0 || excludedReason !== "MOVIE_NOT_AVAILABLE",
+      };
+    });
+    const selected = clusters.reduce((sum, c) => sum + c.selected, 0);
+    const summary = r.perMovie.find((m) => m.movieId === movieId);
+    return {
+      movieId,
+      title: titles.get(movieId) ?? `#${movieId}`,
+      posterUrl: movieDocs.get(movieId)?.thumbnailUrl ?? movieDocs.get(movieId)?.posterUrl,
+      /** CREATED: every cinema that could show it got showtimes. PARTIAL: some did not. NONE: no showtime at all. */
+      outcome:
+        selected === 0
+          ? ("NONE" as const)
+          : clusters.some((c) => c.applicable && c.selected === 0)
+            ? ("PARTIAL" as const)
+            : ("CREATED" as const),
+      selected,
+      candidates: summary?.candidates ?? 0,
+      rejected: summary?.rejected ?? 0,
+      clusters,
+      days: dates.map((date) => ({
+        date,
+        selected: liveByDay.get(`${movieId}|${date}`) ?? 0,
+      })),
+    };
+  });
+
   const at = (d: Date) => {
     const p = vnParts(d);
     return { date: p.date, time: p.time.slice(0, 5) };
@@ -342,6 +520,9 @@ async function runDetail(db: Db, r: GenerationRunDoc) {
     perCluster: r.perCluster,
     perDay: r.perDay ?? [],
     showtimeStatus: statusCount,
+    movieResults,
+    showtimes,
+    showtimesTruncated: rows.length >= MAX_LISTED_SHOWTIMES,
     rejectionSamples: r.rejectionSamples.map((s) => ({
       ...s,
       ...at(s.startAt),
