@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 
 const POLL_MS = 5_000;
 
@@ -16,10 +16,10 @@ export function useSeatMapRefresh(enabled: boolean, reload: () => void): void {
   useEffect(() => {
     if (!enabled) return;
     const timer = setInterval(() => {
-      if (AppState.currentState === 'active') callback.current();
+      if (AppState.currentState === "active") callback.current();
     }, POLL_MS);
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') callback.current();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") callback.current();
     });
     return () => {
       clearInterval(timer);

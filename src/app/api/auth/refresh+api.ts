@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { refreshToken } from '@/server/auth';
-import { ok, parseBody, route } from '@/server/http';
+import { refreshToken } from "@/server/auth";
+import { ok, parseBody, route } from "@/server/http";
 
 const Body = z.object({ token: z.string().min(1) });
 

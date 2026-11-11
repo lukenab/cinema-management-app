@@ -1,6 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 
-const TOKEN_KEY = 'cineprime.accessToken';
+const TOKEN_KEY = "cineprime.accessToken";
 
 export const secureStorage = {
   async getToken(): Promise<string | null> {

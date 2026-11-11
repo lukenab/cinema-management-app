@@ -1,4 +1,4 @@
-import { HttpError } from './http';
+import { HttpError } from "./http";
 
 // Server-only module: dynamic process.env access is fine here (nothing is inlined into the app bundle).
 /* eslint-disable expo/no-dynamic-env-var */
@@ -10,4 +10,5 @@ export function requireEnv(name: string): string {
   return value;
 }
 
-export const optionalEnv = (name: string, fallback = ''): string => process.env[name] || fallback;
+export const optionalEnv = (name: string, fallback = ""): string =>
+  process.env[name] || fallback;

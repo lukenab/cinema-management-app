@@ -1,19 +1,19 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
 export const KNOWN_ROLES = [
-  'ROLE_SUPER_ADMIN',
-  'ROLE_ADMIN',
-  'ROLE_SYSTEM_ADMIN',
-  'ROLE_PROGRAMMING_APPROVER',
-  'ROLE_PROGRAMMING_OPERATOR',
-  'ROLE_FINANCE_APPROVER',
-  'ROLE_FINANCE_OFFICER',
-  'ROLE_COMMERCIAL_APPROVER',
-  'ROLE_COMMERCIAL_MANAGER',
-  'ROLE_SECURITY_AUDITOR',
-  'ROLE_BRANCH_MANAGER',
-  'ROLE_EMPLOYEE',
-  'ROLE_MEMBER',
+  "ROLE_SUPER_ADMIN",
+  "ROLE_ADMIN",
+  "ROLE_SYSTEM_ADMIN",
+  "ROLE_PROGRAMMING_APPROVER",
+  "ROLE_PROGRAMMING_OPERATOR",
+  "ROLE_FINANCE_APPROVER",
+  "ROLE_FINANCE_OFFICER",
+  "ROLE_COMMERCIAL_APPROVER",
+  "ROLE_COMMERCIAL_MANAGER",
+  "ROLE_SECURITY_AUDITOR",
+  "ROLE_BRANCH_MANAGER",
+  "ROLE_EMPLOYEE",
+  "ROLE_MEMBER",
 ] as const;
 
 const ROLE_SET = new Set<string>(KNOWN_ROLES);
@@ -38,7 +38,9 @@ interface Claims {
 function toClusterIds(claim: unknown): string[] {
   if (Array.isArray(claim)) return claim.map(String).filter(Boolean);
   if (claim == null) return [];
-  return String(claim).split(/[\s,]+/).filter(Boolean);
+  return String(claim)
+    .split(/[\s,]+/)
+    .filter(Boolean);
 }
 
 export function isTokenExpired(token: string, skewSeconds = 15): boolean {
@@ -54,8 +56,10 @@ export function isTokenExpired(token: string, skewSeconds = 15): boolean {
 export function userFromToken(token: string): SessionUser | null {
   try {
     const claims = jwtDecode<Claims>(token);
-    const authorities = (claims.scope ?? claims.role ?? '').split(' ').filter(Boolean);
-    const username = claims.sub ?? '';
+    const authorities = (claims.scope ?? claims.role ?? "")
+      .split(" ")
+      .filter(Boolean);
+    const username = claims.sub ?? "";
     return {
       username,
       accountId: claims.accountId ?? username,
@@ -68,13 +72,18 @@ export function userFromToken(token: string): SessionUser | null {
   }
 }
 
-export const ADMIN_ROLES = ['ROLE_SUPER_ADMIN', 'ROLE_ADMIN', 'ROLE_PROGRAMMING_APPROVER', 'ROLE_PROGRAMMING_OPERATOR'];
+export const ADMIN_ROLES = [
+  "ROLE_SUPER_ADMIN",
+  "ROLE_ADMIN",
+  "ROLE_PROGRAMMING_APPROVER",
+  "ROLE_PROGRAMMING_OPERATOR",
+];
 
-export type AppArea = 'customer' | 'admin' | 'unsupported';
+export type AppArea = "customer" | "admin" | "unsupported";
 
 export function areaForUser(user: SessionUser | null): AppArea {
-  if (!user) return 'unsupported';
-  if (user.roles.includes('ROLE_MEMBER')) return 'customer';
-  if (user.roles.some((r) => ADMIN_ROLES.includes(r))) return 'admin';
-  return 'unsupported';
+  if (!user) return "unsupported";
+  if (user.roles.includes("ROLE_MEMBER")) return "customer";
+  if (user.roles.some((r) => ADMIN_ROLES.includes(r))) return "admin";
+  return "unsupported";
 }

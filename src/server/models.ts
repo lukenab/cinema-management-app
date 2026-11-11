@@ -1,6 +1,6 @@
-import type { ObjectId } from 'mongodb';
+import type { ObjectId } from "mongodb";
 
-export type Role = 'MEMBER' | 'ADMIN';
+export type Role = "MEMBER" | "ADMIN";
 
 export interface UserDoc {
   _id: ObjectId;
@@ -10,10 +10,15 @@ export interface UserDoc {
   emailLower: string;
   passwordHash: string;
   role: Role;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: "ACTIVE" | "INACTIVE";
   /** Bumped to revoke every token issued before it. */
   tokenVersion: number;
-  profile: { fullName?: string; phoneNumber?: string; dateOfBirth?: string; gender?: string };
+  profile: {
+    fullName?: string;
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    gender?: string;
+  };
   createdAt: Date;
   lastLoginAt?: Date;
 }
@@ -23,7 +28,12 @@ export interface MovieDoc {
   tmdbId?: number;
   originalTitle: string;
   title: string;
-  translations: { languageCode: string; title?: string; synopsis?: string; tagline?: string }[];
+  translations: {
+    languageCode: string;
+    title?: string;
+    synopsis?: string;
+    tagline?: string;
+  }[];
   synopsis?: string;
   tagline?: string;
   durationMinutes?: number;
@@ -36,7 +46,14 @@ export interface MovieDoc {
   originalLanguage?: string;
   genres: { genreId: number; name: string }[];
   ageRating?: { ratingCode: string; minAge: number };
-  cast: { personId: number; fullName: string; photoUrl?: string; roleType: string; characterName?: string; billingOrder?: number }[];
+  cast: {
+    personId: number;
+    fullName: string;
+    photoUrl?: string;
+    roleType: string;
+    characterName?: string;
+    billingOrder?: number;
+  }[];
   /**
    * DRAFT: imported (fields auto-filled from TMDB), waiting for the admin to check them.
    * APPROVED: checked, can be given release plans; customers only see it through an open release plan.
@@ -52,9 +69,14 @@ export interface MovieDoc {
   approvedAt?: Date;
 }
 
-export type MovieStatus = 'DRAFT' | 'APPROVED' | 'ARCHIVED';
+export type MovieStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
 
-export type ShowtimeStatus = 'SCHEDULED' | 'ON_SALE' | 'CANCELLED' | 'COMPLETED' | 'SUSPENDED';
+export type ShowtimeStatus =
+  | "SCHEDULED"
+  | "ON_SALE"
+  | "CANCELLED"
+  | "COMPLETED"
+  | "SUSPENDED";
 
 export interface ShowtimeDoc {
   _id: number;
@@ -88,7 +110,7 @@ export interface SeatLockDoc {
   seatId: number;
   bookingId: string;
   userId: string;
-  status: 'HELD' | 'SOLD';
+  status: "HELD" | "SOLD";
   /** Only on HELD rows; a TTL index removes them shortly after this time (reads also ignore expired holds). */
   holdExpiresAt?: Date;
 }
@@ -99,10 +121,10 @@ export interface PaymentDoc {
   userId: string;
   idempotencyKey?: string;
   /** INTERNAL: CinePrime's own checkout page (PAYMENT_MODE=internal). FAKE: older records of the same page. */
-  provider: 'VNPAY' | 'INTERNAL' | 'FAKE';
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED';
+  provider: "VNPAY" | "INTERNAL" | "FAKE";
+  status: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
   amount: number;
-  currency: 'VND';
+  currency: "VND";
   /** Reference sent to the provider; unique per attempt. */
   txnRef: string;
   paymentUrl: string;
@@ -117,8 +139,17 @@ export interface PaymentDoc {
   providerTransactionNo?: string;
 }
 
-export type BookingStatus ='PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
-export type PaymentStatus = 'NOT_STARTED' | 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+export type BookingStatus =
+  | "PENDING_PAYMENT"
+  | "CONFIRMED"
+  | "CANCELLED"
+  | "EXPIRED";
+export type PaymentStatus =
+  | "NOT_STARTED"
+  | "PENDING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED";
 
 export interface BookingDoc {
   _id: string;
@@ -143,7 +174,13 @@ export interface BookingDoc {
   subtitleLanguageCode?: string;
   ageRatingCode?: string;
   startAt: Date;
-  seats: { showtimeSeatId: number; seatCode: string; seatType: string; unitPrice: number; finalPrice: number }[];
+  seats: {
+    showtimeSeatId: number;
+    seatCode: string;
+    seatType: string;
+    unitPrice: number;
+    finalPrice: number;
+  }[];
   concessions: {
     itemCode: string;
     itemName: string;
@@ -159,7 +196,7 @@ export interface BookingDoc {
   serviceFee: number;
   discount: number;
   total: number;
-  currency: 'VND';
+  currency: "VND";
   promotionCode?: string;
   promotionDiscountAmount?: number;
   concessionPickupCode?: string;
@@ -168,7 +205,7 @@ export interface BookingDoc {
   createdAt: Date;
 }
 
-export type SeatType = 'STANDARD' | 'VIP' | 'COUPLE';
+export type SeatType = "STANDARD" | "VIP" | "COUPLE";
 
 export interface OperatingHours {
   /** 0 = Sunday … 6 = Saturday */
@@ -184,10 +221,15 @@ export interface ClusterDoc {
   province: string;
   address: string;
   phoneNumber?: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: "ACTIVE" | "INACTIVE";
   operatingHours?: OperatingHours[];
   /** Scheduler inputs, as in the Java cinema_cluster_demand_profile. */
-  demand?: { tier: 'HIGH' | 'MEDIUM' | 'LOW'; score: number; minDailyShows: number; maxDailyShowsPerMovie: number };
+  demand?: {
+    tier: "HIGH" | "MEDIUM" | "LOW";
+    score: number;
+    minDailyShows: number;
+    maxDailyShowsPerMovie: number;
+  };
 }
 
 export interface RoomDoc {
@@ -196,8 +238,8 @@ export interface RoomDoc {
   name: string;
   /** Presentation formats the room can show. */
   formats: string[];
-  layout: 'SMALL' | 'STANDARD' | 'LARGE';
-  status: 'ACTIVE' | 'INACTIVE';
+  layout: "SMALL" | "STANDARD" | "LARGE";
+  status: "ACTIVE" | "INACTIVE";
 }
 
 /** Right to show a movie at one cinema for a period (Java: movie_availability). */
@@ -205,7 +247,7 @@ export interface ReleasePlanDoc {
   _id: number;
   movieId: number;
   clusterId: number;
-  status: 'PLANNED' | 'OPEN' | 'SUSPENDED' | 'CLOSED';
+  status: "PLANNED" | "OPEN" | "SUSPENDED" | "CLOSED";
   showingStartDate: string;
   showingEndDate?: string;
   note?: string;
@@ -214,13 +256,13 @@ export interface ReleasePlanDoc {
 }
 
 export interface PriceRate {
-  dayType: 'WEEKDAY' | 'WEEKEND';
+  dayType: "WEEKDAY" | "WEEKEND";
   daypart: Daypart;
   format: string;
   standardPrice: number;
 }
 
-export type Daypart = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'LATE_NIGHT';
+export type Daypart = "MORNING" | "AFTERNOON" | "EVENING" | "LATE_NIGHT";
 
 /** Ticket prices of one cinema (Java: price_book + price_rate). */
 export interface PriceBookDoc {
@@ -231,38 +273,75 @@ export interface PriceBookDoc {
 }
 
 export type SkipReason =
-  | 'MOVIE_NOT_AVAILABLE'
-  | 'NOT_RELEASED_YET'
-  | 'NO_ELIGIBLE_ROOM'
-  | 'EXISTING_SHOWTIME_CONFLICT'
-  | 'CLEANUP_BUFFER_CONFLICT'
-  | 'MAXIMUM_ROOM_SHARE_REACHED'
-  | 'SAME_MOVIE_START_STAGGER_CONFLICT'
-  | 'MAX_DAILY_SHOWS_PER_MOVIE_REACHED'
-  | 'MISSING_DEMAND_PROFILE';
+  | "MOVIE_NOT_AVAILABLE"
+  | "NOT_RELEASED_YET"
+  | "NO_ELIGIBLE_ROOM"
+  | "EXISTING_SHOWTIME_CONFLICT"
+  | "CLEANUP_BUFFER_CONFLICT"
+  | "MAXIMUM_ROOM_SHARE_REACHED"
+  | "SAME_MOVIE_START_STAGGER_CONFLICT"
+  | "MAX_DAILY_SHOWS_PER_MOVIE_REACHED"
+  | "MISSING_DEMAND_PROFILE";
 
 export interface GenerationRunDoc {
   _id: number;
-  algorithm: 'LEGACY_GREEDY';
+  algorithm: "LEGACY_GREEDY";
   /** COMPLETED: showtimes created (SCHEDULED until published); DISCARDED: its unpublished showtimes were removed. */
-  status: 'COMPLETED' | 'FAILED' | 'DISCARDED';
+  status: "COMPLETED" | "FAILED" | "DISCARDED";
   startDate: string;
   endDate: string;
   clusterIds: number[];
   movieIds: number[];
   policy: Record<string, number | string>;
-  summary: { candidates: number; selected: number; rejected: number; excluded: number; durationMs: number };
+  summary: {
+    candidates: number;
+    selected: number;
+    rejected: number;
+    excluded: number;
+    durationMs: number;
+  };
   /** Count per reason; "excluded" reasons stop a movie/cinema/day before any slot is built. */
   rejectedByReason: Partial<Record<SkipReason, number>>;
   excludedByReason: Partial<Record<SkipReason, number>>;
-  perMovie: { movieId: number; title: string; candidates: number; selected: number; rejected: number }[];
-  perCluster: { clusterId: number; name: string; candidates: number; selected: number; rejected: number }[];
+  perMovie: {
+    movieId: number;
+    title: string;
+    candidates: number;
+    selected: number;
+    rejected: number;
+  }[];
+  perCluster: {
+    clusterId: number;
+    name: string;
+    candidates: number;
+    selected: number;
+    rejected: number;
+  }[];
   /** A capped sample of rejections, enough to trace why slots were not chosen. */
-  rejectionSamples: { movieId: number; clusterId: number; roomId: number; startAt: Date; format: string; score: number; reason: SkipReason }[];
+  rejectionSamples: {
+    movieId: number;
+    clusterId: number;
+    roomId: number;
+    startAt: Date;
+    format: string;
+    score: number;
+    reason: SkipReason;
+  }[];
   perDay: { date: string; selected: number }[];
-  exclusions: { movieId: number; clusterId: number; date: string; reason: SkipReason }[];
+  exclusions: {
+    movieId: number;
+    clusterId: number;
+    date: string;
+    reason: SkipReason;
+  }[];
   /** Score parts of the chosen showtimes, for the run report. */
-  selectedSamples: { showtimeId: number; score: number; daypart: string; expectedAttendance: number; capacity: number }[];
+  selectedSamples: {
+    showtimeId: number;
+    score: number;
+    daypart: string;
+    expectedAttendance: number;
+    capacity: number;
+  }[];
   showtimeIds: number[];
   publishedAt?: Date;
   error?: string;

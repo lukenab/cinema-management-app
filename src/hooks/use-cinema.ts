@@ -1,11 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
-import { useGetClustersQuery } from '@/store/api';
+import { useGetClustersQuery } from "@/store/api";
 
 // The cinema the customer is browsing, remembered between launches. Kept outside Redux because it is a
 // device preference, not session data, and several screens read it.
-const KEY = 'cineprime.cinemaId';
+const KEY = "cineprime.cinemaId";
 let selected: number | null = null;
 let loaded = false;
 const listeners = new Set<() => void>();

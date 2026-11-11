@@ -1,7 +1,7 @@
 // DTOs returned by the API routes in src/app/api (shapes built in src/server).
 // Only the fields the mobile app reads are declared.
 
-export type DisplayStatus = 'NOW_SHOWING' | 'COMING_SOON';
+export type DisplayStatus = "NOW_SHOWING" | "COMING_SOON";
 
 export interface Genre {
   genreId: number;
@@ -60,7 +60,12 @@ export interface PublicMovie {
   formats?: string[];
   cast?: CastMember[];
   /** Detail only. */
-  translations?: { languageCode: string; title?: string; synopsis?: string; tagline?: string }[];
+  translations?: {
+    languageCode: string;
+    title?: string;
+    synopsis?: string;
+    tagline?: string;
+  }[];
 }
 
 export interface Cluster {
@@ -71,13 +76,29 @@ export interface Cluster {
   province: string;
   address: string;
   phoneNumber?: string;
-  status: 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'INACTIVE';
+  status: "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "INACTIVE";
   operatingHours?: { dayOfWeek: number; opensAt: string; closesAt: string }[];
-  demand?: { tier: 'HIGH' | 'MEDIUM' | 'LOW'; score: number; minDailyShows: number; maxDailyShowsPerMovie: number };
-  rooms?: { roomId: number; name: string; formats: string[]; layout: 'SMALL' | 'STANDARD' | 'LARGE'; capacity: number }[];
+  demand?: {
+    tier: "HIGH" | "MEDIUM" | "LOW";
+    score: number;
+    minDailyShows: number;
+    maxDailyShowsPerMovie: number;
+  };
+  rooms?: {
+    roomId: number;
+    name: string;
+    formats: string[];
+    layout: "SMALL" | "STANDARD" | "LARGE";
+    capacity: number;
+  }[];
 }
 
-export type ShowtimeStatus = 'SCHEDULED' | 'ON_SALE' | 'CANCELLED' | 'COMPLETED' | 'SUSPENDED';
+export type ShowtimeStatus =
+  | "SCHEDULED"
+  | "ON_SALE"
+  | "CANCELLED"
+  | "COMPLETED"
+  | "SUSPENDED";
 
 export interface Showtime {
   showTimeId: number;
@@ -99,11 +120,11 @@ export interface Showtime {
   availableSeats?: number;
   /** Standard seat price. */
   price?: number;
-  seatPrices?: Partial<Record<'STANDARD' | 'VIP' | 'COUPLE', number>>;
+  seatPrices?: Partial<Record<"STANDARD" | "VIP" | "COUPLE", number>>;
   generationRunId?: number;
 }
 
-export type SeatType = 'STANDARD' | 'VIP' | 'COUPLE' | 'ACCESSIBLE';
+export type SeatType = "STANDARD" | "VIP" | "COUPLE" | "ACCESSIBLE";
 
 export interface Seat {
   seatId: number;
@@ -114,7 +135,7 @@ export interface Seat {
   type: SeatType;
   colSpan?: number;
   aisleAfter?: boolean;
-  status: 'AVAILABLE' | 'LOCKED' | 'BOOKED';
+  status: "AVAILABLE" | "LOCKED" | "BOOKED";
   price: number;
   reservedByMe?: boolean;
 }
@@ -123,7 +144,7 @@ export interface SeatMapPosition {
   rowIndex: number;
   columnIndex: number;
   rowLabel: string;
-  positionType: 'SEAT' | 'AISLE' | 'EXIT' | 'EMPTY_SPACE';
+  positionType: "SEAT" | "AISLE" | "EXIT" | "EMPTY_SPACE";
   seatNumber?: number;
   seatCode?: string;
   seatType?: SeatType;
@@ -136,14 +157,23 @@ export interface ShowtimeSeatMap {
 }
 
 export interface SeatHoldPolicy {
-  channel: 'WEB' | 'MOBILE' | 'COUNTER';
+  channel: "WEB" | "MOBILE" | "COUNTER";
   ttlSeconds: number;
   maxSeatsPerBooking: number;
 }
 
-export type BookingStatus = 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED';
+export type BookingStatus =
+  | "PENDING_PAYMENT"
+  | "CONFIRMED"
+  | "CANCELLED"
+  | "EXPIRED";
 
-export type PaymentStatus = 'NOT_STARTED' | 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+export type PaymentStatus =
+  | "NOT_STARTED"
+  | "PENDING"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED";
 
 export interface BookingSeat {
   showtimeSeatId: number;
@@ -221,7 +251,12 @@ export interface BookingConfirmation {
   currency?: string;
 }
 
-export type PaymentAttemptStatus = 'INITIATED' | 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED';
+export type PaymentAttemptStatus =
+  | "INITIATED"
+  | "PENDING"
+  | "PAID"
+  | "FAILED"
+  | "EXPIRED";
 
 export interface PaymentSession {
   paymentId: string;
@@ -249,7 +284,7 @@ export interface ComboComponent {
 }
 
 export interface CatalogConcession {
-  sellableType: 'SKU' | 'COMBO';
+  sellableType: "SKU" | "COMBO";
   sellableId: number;
   code: string;
   name: string;
@@ -258,7 +293,7 @@ export interface CatalogConcession {
   imageUrl?: string;
   price: number;
   currency: string;
-  availability: 'AVAILABLE' | 'LOW_AVAILABILITY' | 'SOLD_OUT';
+  availability: "AVAILABLE" | "LOW_AVAILABILITY" | "SOLD_OUT";
   size?: string;
   flavor?: string;
   components: ComboComponent[];
@@ -270,7 +305,7 @@ export interface ConcessionSelection {
 }
 
 export interface ConcessionCartItem {
-  sellableType: 'SKU' | 'COMBO';
+  sellableType: "SKU" | "COMBO";
   sellableId: number;
   quantity: number;
   selections?: ConcessionSelection[];
@@ -280,7 +315,7 @@ export interface PublicPromotionOffer {
   code: string;
   name: string;
   description?: string;
-  benefitScope: 'TICKETS' | 'CONCESSIONS' | 'ORDER';
+  benefitScope: "TICKETS" | "CONCESSIONS" | "ORDER";
   validFrom?: string | null;
   validUntil?: string | null;
   discountType: string;
@@ -340,7 +375,12 @@ export interface TmdbMovieDetails {
   trailerUrl?: string;
   genres: string[];
   ageRating?: { ratingCode: string; minAge: number };
-  cast: { tmdbId: number; fullName: string; roleType: string; photoUrl?: string }[];
+  cast: {
+    tmdbId: number;
+    fullName: string;
+    roleType: string;
+    photoUrl?: string;
+  }[];
   warnings: string[];
   popularityScore?: number;
   /** Set when the movie was already imported. */
@@ -348,7 +388,7 @@ export interface TmdbMovieDetails {
 }
 
 /** DRAFT = imported, being checked; APPROVED = can get release plans; ARCHIVED = out of circulation. */
-export type MovieStatus = 'DRAFT' | 'APPROVED' | 'ARCHIVED';
+export type MovieStatus = "DRAFT" | "APPROVED" | "ARCHIVED";
 
 export interface AdminMovie {
   movieId: number;
@@ -380,9 +420,9 @@ export interface AdminMovie {
   upcomingShowtimes?: number;
 }
 
-export type AgeRatingCode = 'P' | 'K' | 'T13' | 'T16' | 'T18';
+export type AgeRatingCode = "P" | "K" | "T13" | "T16" | "T18";
 
-export type ReleasePlanStatus = 'PLANNED' | 'OPEN' | 'SUSPENDED' | 'CLOSED';
+export type ReleasePlanStatus = "PLANNED" | "OPEN" | "SUSPENDED" | "CLOSED";
 
 export interface ReleasePlan {
   planId: number;
@@ -401,25 +441,31 @@ export interface ReleasePlan {
 }
 
 export type SkipReason =
-  | 'MOVIE_NOT_AVAILABLE'
-  | 'NOT_RELEASED_YET'
-  | 'NO_ELIGIBLE_ROOM'
-  | 'EXISTING_SHOWTIME_CONFLICT'
-  | 'CLEANUP_BUFFER_CONFLICT'
-  | 'MAXIMUM_ROOM_SHARE_REACHED'
-  | 'SAME_MOVIE_START_STAGGER_CONFLICT'
-  | 'MAX_DAILY_SHOWS_PER_MOVIE_REACHED'
-  | 'MISSING_DEMAND_PROFILE';
+  | "MOVIE_NOT_AVAILABLE"
+  | "NOT_RELEASED_YET"
+  | "NO_ELIGIBLE_ROOM"
+  | "EXISTING_SHOWTIME_CONFLICT"
+  | "CLEANUP_BUFFER_CONFLICT"
+  | "MAXIMUM_ROOM_SHARE_REACHED"
+  | "SAME_MOVIE_START_STAGGER_CONFLICT"
+  | "MAX_DAILY_SHOWS_PER_MOVIE_REACHED"
+  | "MISSING_DEMAND_PROFILE";
 
 export interface SchedulingRunSummary {
   runId: number;
   algorithm: string;
-  status: 'COMPLETED' | 'FAILED' | 'DISCARDED';
+  status: "COMPLETED" | "FAILED" | "DISCARDED";
   startDate: string;
   endDate: string;
   clusters: { clusterId: number; name: string }[];
   movies: { movieId: number; title: string }[];
-  summary: { candidates: number; selected: number; rejected: number; excluded: number; durationMs: number };
+  summary: {
+    candidates: number;
+    selected: number;
+    rejected: number;
+    excluded: number;
+    durationMs: number;
+  };
   published: boolean;
   publishedAt?: string;
   createdBy: string;
@@ -430,8 +476,20 @@ export interface SchedulingRunDetail extends SchedulingRunSummary {
   policy: Record<string, number | string>;
   rejectedByReason: Partial<Record<SkipReason, number>>;
   excludedByReason: Partial<Record<SkipReason, number>>;
-  perMovie: { movieId: number; title: string; candidates: number; selected: number; rejected: number }[];
-  perCluster: { clusterId: number; name: string; candidates: number; selected: number; rejected: number }[];
+  perMovie: {
+    movieId: number;
+    title: string;
+    candidates: number;
+    selected: number;
+    rejected: number;
+  }[];
+  perCluster: {
+    clusterId: number;
+    name: string;
+    candidates: number;
+    selected: number;
+    rejected: number;
+  }[];
   perDay: { date: string; selected: number }[];
   showtimeStatus: Record<string, number>;
   rejectionSamples: {
@@ -447,15 +505,22 @@ export interface SchedulingRunDetail extends SchedulingRunSummary {
     score: number;
     reason: SkipReason;
   }[];
-  exclusions: { movieId: number; movieTitle?: string; clusterId: number; clusterName: string; date: string; reason: SkipReason }[];
+  exclusions: {
+    movieId: number;
+    movieTitle?: string;
+    clusterId: number;
+    clusterName: string;
+    date: string;
+    reason: SkipReason;
+  }[];
   opened?: number;
   removed?: number;
 }
 
 export interface PriceRate {
-  dayType: 'WEEKDAY' | 'WEEKEND';
-  daypart: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'LATE_NIGHT';
-  format: '2D' | '3D';
+  dayType: "WEEKDAY" | "WEEKEND";
+  daypart: "MORNING" | "AFTERNOON" | "EVENING" | "LATE_NIGHT";
+  format: "2D" | "3D";
   standardPrice: number;
 }
 
@@ -463,7 +528,7 @@ export interface PriceBook {
   clusterId: number;
   rates: PriceRate[];
   seatMultipliers: { STANDARD: number; VIP: number; COUPLE: number };
-  dayparts: { code: PriceRate['daypart']; label: string }[];
+  dayparts: { code: PriceRate["daypart"]; label: string }[];
   updatedAt: string;
 }
 
@@ -483,10 +548,22 @@ export interface QuickBookingOption {
   format: string;
   roomName: string;
   seatsLeft: number;
-  movie: { movieId: number; title: string; posterUrl?: string; durationMinutes?: number; ageRatingCode?: string; genres: string[] };
+  movie: {
+    movieId: number;
+    title: string;
+    posterUrl?: string;
+    durationMinutes?: number;
+    ageRatingCode?: string;
+    genres: string[];
+  };
   summary: string;
   reason: string;
-  seats: { seatId: number; seatCode: string; type: 'STANDARD' | 'VIP' | 'COUPLE'; price: number }[];
+  seats: {
+    seatId: number;
+    seatCode: string;
+    type: "STANDARD" | "VIP" | "COUPLE";
+    price: number;
+  }[];
   seatsAdjacent: boolean;
   combos: QuickBookingCombo[];
   ticketTotal: number;
@@ -495,7 +572,7 @@ export interface QuickBookingOption {
 }
 
 export interface QuickBookingResult {
-  source: 'AI' | 'RULES';
+  source: "AI" | "RULES";
   reply: string;
   partySize: number;
   date: string;
@@ -526,7 +603,7 @@ export interface Account {
   accountId: string;
   username?: string;
   email?: string;
-  status: 'ACTIVE' | 'INACTIVE' | string;
+  status: "ACTIVE" | "INACTIVE" | string;
   lastLoginAt?: string | null;
   createdAt?: string;
   roles?: { roleName: string }[];

@@ -1,4 +1,4 @@
-import type { SkipReason } from '../models';
+import type { SkipReason } from "../models";
 
 /** Tunables of a run (Java: showtime_allocation_policy). */
 export interface SchedulingPolicy {
@@ -26,7 +26,13 @@ export const DEFAULT_POLICY: SchedulingPolicy = {
 };
 
 /** Scoring weights (Java policy: movie / cluster / time slot / format / room capacity demand weights). */
-export const WEIGHTS = { movie: 0.4, cluster: 0.25, time: 0.15, format: 0.1, roomFit: 0.1 };
+export const WEIGHTS = {
+  movie: 0.4,
+  cluster: 0.25,
+  time: 0.15,
+  format: 0.1,
+  roomFit: 0.1,
+};
 
 export interface Candidate {
   id: number;
@@ -41,7 +47,15 @@ export interface Candidate {
   format: string;
   capacity: number;
   score: number;
-  breakdown: { daypart: string; movie: number; cluster: number; time: number; format: number; roomFit: number; expectedAttendance: number };
+  breakdown: {
+    daypart: string;
+    movie: number;
+    cluster: number;
+    time: number;
+    format: number;
+    roomFit: number;
+    expectedAttendance: number;
+  };
 }
 
 export interface Rejection {

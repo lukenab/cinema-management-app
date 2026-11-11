@@ -5,12 +5,19 @@
 // 2. The remaining candidates, best score first, get extra shows until the cinema's maxDailyShowsPerMovie.
 // A candidate is only taken when it passes the hard rules: concurrent room share, start stagger of the same
 // movie, and no overlap (plus cleanup) in the same room.
-import { clusterOf } from '../cinema';
-import type { Candidate, Fixed, Rejection, SchedulingPolicy } from './types';
+import { clusterOf } from "../cinema";
+import type { Candidate, Fixed, Rejection, SchedulingPolicy } from "./types";
 
-type Placed = Pick<Fixed, 'movieId' | 'clusterId' | 'roomId' | 'date' | 'start' | 'end'>;
+type Placed = Pick<
+  Fixed,
+  "movieId" | "clusterId" | "roomId" | "date" | "start" | "end"
+>;
 
-export function select(ranked: Candidate[], fixed: Fixed[], policy: SchedulingPolicy) {
+export function select(
+  ranked: Candidate[],
+  fixed: Fixed[],
+  policy: SchedulingPolicy,
+) {
   const selected: Candidate[] = [];
   const rejected: Rejection[] = [];
   const cleanupMs = policy.cleanupMinutes * 60_000;
@@ -41,22 +48,43 @@ export function select(ranked: Candidate[], fixed: Fixed[], policy: SchedulingPo
 
   const maxRoomsFor = (c: Candidate) => {
     const available = roomsByClusterDay.get(clusterDay(c))?.size ?? 0;
-    return available ? Math.max(1, Math.floor(policy.maximumRoomShare * available)) : 0;
+    return available
+      ? Math.max(1, Math.floor(policy.maximumRoomShare * available))
+      : 0;
   };
 
   const attempt = (c: Candidate): boolean => {
     const sameMovie = placedByGroup.get(groupKey(c)) ?? [];
-    const concurrentRooms = new Set(sameMovie.filter((p) => p.start < c.end && c.start < p.end).map((p) => p.roomId));
-    if (!concurrentRooms.has(c.roomId) && concurrentRooms.size >= maxRoomsFor(c)) {
-      rejected.push({ candidate: c, reason: 'MAXIMUM_ROOM_SHARE_REACHED' });
+    const concurrentRooms = new Set(
+      sameMovie
+        .filter((p) => p.start < c.end && c.start < p.end)
+        .map((p) => p.roomId),
+    );
+    if (
+      !concurrentRooms.has(c.roomId) &&
+      concurrentRooms.size >= maxRoomsFor(c)
+    ) {
+      rejected.push({ candidate: c, reason: "MAXIMUM_ROOM_SHARE_REACHED" });
       return false;
     }
-    if (staggerMs > 0 && sameMovie.some((p) => p.roomId !== c.roomId && Math.abs(p.start - c.start) < staggerMs)) {
-      rejected.push({ candidate: c, reason: 'SAME_MOVIE_START_STAGGER_CONFLICT' });
+    if (
+      staggerMs > 0 &&
+      sameMovie.some(
+        (p) => p.roomId !== c.roomId && Math.abs(p.start - c.start) < staggerMs,
+      )
+    ) {
+      rejected.push({
+        candidate: c,
+        reason: "SAME_MOVIE_START_STAGGER_CONFLICT",
+      });
       return false;
     }
-    if ((placedByRoom.get(c.roomId) ?? []).some((p) => c.start < p.end + cleanupMs && p.start < c.end + cleanupMs)) {
-      rejected.push({ candidate: c, reason: 'CLEANUP_BUFFER_CONFLICT' });
+    if (
+      (placedByRoom.get(c.roomId) ?? []).some(
+        (p) => c.start < p.end + cleanupMs && p.start < c.end + cleanupMs,
+      )
+    ) {
+      rejected.push({ candidate: c, reason: "CLEANUP_BUFFER_CONFLICT" });
       return false;
     }
     selected.push(c);
@@ -69,17 +97,20 @@ export function select(ranked: Candidate[], fixed: Fixed[], policy: SchedulingPo
   for (const c of ranked) {
     const demand = clusterOf(c.clusterId)?.demand;
     if (!demand) {
-      rejected.push({ candidate: c, reason: 'MISSING_DEMAND_PROFILE' });
+      rejected.push({ candidate: c, reason: "MISSING_DEMAND_PROFILE" });
       continue;
     }
     const g = groupKey(c);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g)!.push(c);
   }
-  const demandOf = (g: string) => clusterOf(Number(g.split('|')[1]))!.demand!;
+  const demandOf = (g: string) => clusterOf(Number(g.split("|")[1]))!.demand!;
   const minimumOf = (g: string) => {
     const d = demandOf(g);
-    return Math.min(Math.max(policy.minimumCoverage, d.minDailyShows), d.maxDailyShowsPerMovie);
+    return Math.min(
+      Math.max(policy.minimumCoverage, d.minDailyShows),
+      d.maxDailyShowsPerMovie,
+    );
   };
 
   // Pass 1: round robin up to the minimum.
@@ -108,7 +139,10 @@ export function select(ranked: Candidate[], fixed: Fixed[], policy: SchedulingPo
   for (const c of rest) {
     const g = groupKey(c);
     if ((count.get(g) ?? 0) >= demandOf(g).maxDailyShowsPerMovie) {
-      rejected.push({ candidate: c, reason: 'MAX_DAILY_SHOWS_PER_MOVIE_REACHED' });
+      rejected.push({
+        candidate: c,
+        reason: "MAX_DAILY_SHOWS_PER_MOVIE_REACHED",
+      });
       continue;
     }
     attempt(c);

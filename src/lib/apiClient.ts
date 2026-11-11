@@ -1,15 +1,20 @@
-import { API_URL } from './config';
-import { isTokenExpired } from './jwt';
-import { secureStorage } from './secureStorage';
+import { API_URL } from "./config";
+import { isTokenExpired } from "./jwt";
+import { secureStorage } from "./secureStorage";
 
 export class ApiError extends Error {
   status: number;
   code?: number;
   result?: unknown;
 
-  constructor(message: string, status: number, code?: number, result?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    code?: number,
+    result?: unknown,
+  ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.result = result;
@@ -33,7 +38,7 @@ export const setAccessToken = (token: string | null) => {
 export const getAccessToken = () => accessToken;
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   params?: Record<string, string | number | boolean | undefined | null>;
   body?: unknown;
   headers?: Record<string, string>;
@@ -42,40 +47,63 @@ export interface RequestOptions {
   timeoutMs?: number;
 }
 
-const AUTH_PATHS = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh', '/api/auth/logout'];
+const AUTH_PATHS = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/refresh",
+  "/api/auth/logout",
+];
 
-function buildUrl(path: string, params?: RequestOptions['params']): string {
-  const url = `${API_URL}${path.startsWith('/') ? path : `/${path}`}`;
+function buildUrl(path: string, params?: RequestOptions["params"]): string {
+  const url = `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
   if (!params) return url;
   const query = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== null && v !== '')
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join('&');
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .map(
+      ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
+    )
+    .join("&");
   return query ? `${url}?${query}` : url;
 }
 
 /** Backend wraps payloads as { code, message, result }; some endpoints return the raw body. */
 function unwrap<T>(body: unknown): T {
-  if (body && typeof body === 'object' && 'result' in (body as Record<string, unknown>)) {
+  if (
+    body &&
+    typeof body === "object" &&
+    "result" in (body as Record<string, unknown>)
+  ) {
     const { result } = body as { result?: T };
     if (result !== undefined && result !== null) return result;
   }
   return body as T;
 }
 
-async function rawFetch(path: string, options: RequestOptions, token: string | null): Promise<Response> {
+async function rawFetch(
+  path: string,
+  options: RequestOptions,
+  token: string | null,
+): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 20_000);
+  const timer = setTimeout(
+    () => controller.abort(),
+    options.timeoutMs ?? 20_000,
+  );
   try {
     return await fetch(buildUrl(path, options.params), {
-      method: options.method ?? 'GET',
+      method: options.method ?? "GET",
       headers: {
-        Accept: 'application/json',
-        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...(token && !options.anonymous ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: "application/json",
+        ...(options.body !== undefined
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(token && !options.anonymous
+          ? { Authorization: `Bearer ${token}` }
+          : {}),
         ...options.headers,
       },
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body:
+        options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     });
   } finally {
@@ -90,7 +118,11 @@ async function refreshToken(current: string): Promise<string | null> {
   if (refreshing) return refreshing;
   refreshing = (async () => {
     try {
-      const res = await rawFetch('/api/auth/refresh', { method: 'POST', body: { token: current }, anonymous: true }, null);
+      const res = await rawFetch(
+        "/api/auth/refresh",
+        { method: "POST", body: { token: current }, anonymous: true },
+        null,
+      );
       if (!res.ok) return null;
       const body = await res.json();
       const next = unwrap<{ token?: string }>(body)?.token;
@@ -108,7 +140,10 @@ async function refreshToken(current: string): Promise<string | null> {
   return refreshing;
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   let token = accessToken;
   const skipRefresh = AUTH_PATHS.some((p) => path.startsWith(p));
 
@@ -120,8 +155,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   try {
     response = await rawFetch(path, options, token);
   } catch (e) {
-    const aborted = e instanceof Error && e.name === 'AbortError';
-    throw new ApiError(aborted ? 'Request timed out. Check your connection.' : 'Cannot reach the server. Check your connection.', 0);
+    const aborted = e instanceof Error && e.name === "AbortError";
+    throw new ApiError(
+      aborted
+        ? "Request timed out. Check your connection."
+        : "Cannot reach the server. Check your connection.",
+      0,
+    );
   }
 
   if (response.status === 401 && token && !options.anonymous && !skipRefresh) {
@@ -144,16 +184,33 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
-    const envelope = (body && typeof body === 'object' ? body : {}) as { message?: string; code?: number; result?: unknown };
-    throw new ApiError(envelope.message || `Request failed (${response.status})`, response.status, envelope.code, envelope.result);
+    const envelope = (body && typeof body === "object" ? body : {}) as {
+      message?: string;
+      code?: number;
+      result?: unknown;
+    };
+    throw new ApiError(
+      envelope.message || `Request failed (${response.status})`,
+      response.status,
+      envelope.code,
+      envelope.result,
+    );
   }
 
   return unwrap<T>(body);
 }
 
-export const getErrorMessage = (error: unknown, fallback = 'Something went wrong. Please try again.'): string => {
+export const getErrorMessage = (
+  error: unknown,
+  fallback = "Something went wrong. Please try again.",
+): string => {
   if (error instanceof ApiError) return error.message || fallback;
-  if (error && typeof error === 'object' && 'message' in error && typeof (error as { message: unknown }).message === 'string') {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
     return (error as { message: string }).message || fallback;
   }
   return fallback;
@@ -164,7 +221,7 @@ export const getErrorMessage = (error: unknown, fallback = 'Something went wrong
  * operation (not secret), so Math.random is enough and avoids a native module.
  */
 export const newIdempotencyKey = (): string =>
-  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = Math.floor(Math.random() * 16);
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
   });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 /** Seconds remaining until an ISO timestamp, ticking every second. null when there is no valid target. */
 export function useCountdown(target?: string | null): number | null {
