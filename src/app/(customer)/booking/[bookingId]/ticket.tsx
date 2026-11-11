@@ -13,12 +13,13 @@ import { colors, radius, spacing } from '@/theme';
 /** A paid ticket: the QR code (the booking code) is what the gate scans; the code is printed under it too. */
 export default function Ticket() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
-  const booking = useGetBookingQuery(bookingId);
+  // Always read the order again: it may have been cached unpaid while the customer was paying.
+  const booking = useGetBookingQuery(bookingId, { refetchOnMountOrArgChange: true });
   const { cinemas } = useCinema();
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
-  if (booking.isLoading) return <Screen><LoadingView /></Screen>;
+  if (booking.isLoading || (booking.isFetching && booking.data?.status === 'PENDING_PAYMENT')) return <Screen><LoadingView /></Screen>;
   if (booking.error || !booking.data) return <Screen><ErrorView message={queryErrorMessage(booking.error, 'Không tải được vé này.')} onRetry={booking.refetch} /></Screen>;
   const b = booking.data;
   const confirmed = b.status === 'CONFIRMED';

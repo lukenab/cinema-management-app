@@ -11,8 +11,10 @@ import { API_URL } from '@/lib/config';
 import { openPaidTicket } from '@/lib/navigation';
 import { BOOKING_STATUS_LABEL } from '@/lib/labels';
 import { formatCountdown, formatLongDate, formatMoney, formatTime } from '@/lib/format';
+import { useAppDispatch } from '@/store';
 import { useCountdown } from '@/hooks/use-countdown';
 import {
+  api,
   queryErrorMessage,
   useApplyPromotionMutation,
   useCreatePaymentSessionMutation,
@@ -56,6 +58,7 @@ function Row({ label, value, strong, tone }: { label: string; value: string; str
 
 export default function Checkout() {
   const { bookingId, notice } = useLocalSearchParams<{ bookingId: string; notice?: string }>();
+  const dispatch = useAppDispatch();
   const [polling, setPolling] = useState(false);
   const booking = useGetBookingQuery(bookingId, { pollingInterval: polling ? POLL_MS : 0, refetchOnFocus: true });
   const [createSession, sessionState] = useCreatePaymentSessionMutation();
@@ -141,6 +144,8 @@ export default function Checkout() {
       if (!paid && p.data?.status === 'PAID') {
         paid = true;
         clearInterval(watcher);
+        // The order was cached while it was still unpaid: drop it so the ticket screen reads the confirmed order.
+        dispatch(api.util.invalidateTags([{ type: 'Booking', id: bookingId }, 'MyBookings']));
         openPaidTicket(bookingId);
       }
     }, 2500);
@@ -156,6 +161,8 @@ export default function Checkout() {
     // Opening the app again proves nothing: always ask the backend for the final state.
     setPolling(true);
     const latest = await fetchPayment(bookingId);
+    // The payment page may have opened the ticket while this request was in flight; this screen is gone then.
+    if (!mountedRef.current) return;
     if (latest.data && (latest.data.status === 'FAILED' || latest.data.status === 'EXPIRED')) {
       paymentKeys.delete(bookingId);
       setPolling(false);
