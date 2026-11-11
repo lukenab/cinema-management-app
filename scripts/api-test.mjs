@@ -374,6 +374,10 @@ await test('E10c', 'Report lists each movie per cinema and per day, and every sh
   expect(byCluster[1].applicable && byCluster[1].selected > 0 && byCluster[2].applicable && byCluster[2].selected > 0, 'cinemas with a plan');
   expect(!byCluster[3].applicable && byCluster[3].selected === 0, 'Bình Thủy has no plan, so it is not applicable');
   expect(m.days.reduce((a, x) => a + x.selected, 0) === m.selected, 'days add up');
+  for (const c of m.clusters.filter((x) => x.applicable)) {
+    const total = Object.values(c.rejectedReasons ?? {}).reduce((acc, n) => acc + n, 0);
+    expect(total === c.rejected, `${c.name}: reasons add up to ${total}, rejected ${c.rejected}`);
+  }
   expect(d.showtimes.every((s) => s.movieTitle && s.clusterName && s.startTime && s.price > 0), 'showtime fields');
   return `${m.outcome}: ${m.clusters.filter((c) => c.applicable).map((c) => `${c.name.replace('CinePrime ', '')} ${c.selected}`).join(', ')}; ${d.showtimes.length} suất liệt kê`;
 });

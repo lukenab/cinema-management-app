@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Alert, RefreshControl, ScrollView, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, type ScrollViewInstance, View } from 'react-native';
 
 import { MovieResults, ShowtimeList } from '@/components/RunResults';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -45,6 +45,9 @@ export default function RunReport() {
   const [publish, publishState] = usePublishSchedulingRunMutation();
   const [discard, discardState] = useDiscardSchedulingRunMutation();
   const [reason, setReason] = useState<SkipReason | undefined>(undefined);
+  // The summary of rejection reasons sits at the bottom: remember where, so the overview can jump to it.
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const [reasonsY, setReasonsY] = useState(0);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   const r = report.data;
@@ -80,6 +83,7 @@ export default function RunReport() {
     <Screen>
       <ScreenHeader title={`Báo cáo tạo lịch #${r.runId}`} subtitle={`${formatShortDate(r.startDate)} → ${formatShortDate(r.endDate)} · ${r.algorithm}`} />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl }}
         refreshControl={<RefreshControl refreshing={report.isFetching} onRefresh={() => void report.refetch()} tintColor={colors.primary} />}
       >
@@ -87,8 +91,8 @@ export default function RunReport() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <AppText style={{ flex: 1, fontSize: 15, fontWeight: '700' }}>Tổng quan</AppText>
             <Badge
-              label={r.status === 'DISCARDED' ? 'Đã huỷ' : scheduled ? `${scheduled} suất chờ mở bán` : 'Đã mở bán'}
-              tone={r.status === 'DISCARDED' ? 'neutral' : scheduled ? 'warning' : 'success'}
+              label={r.status === 'DISCARDED' ? 'Đã huỷ' : r.summary.selected === 0 ? 'Không tạo được suất' : scheduled ? `${scheduled} suất chờ mở bán` : 'Đã mở bán'}
+              tone={r.status === 'DISCARDED' ? 'neutral' : r.summary.selected === 0 ? 'danger' : scheduled ? 'warning' : 'success'}
             />
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -111,6 +115,7 @@ export default function RunReport() {
               <Button title="Huỷ lần tạo này" variant="danger" onPress={doDiscard} loading={discardState.isLoading} />
             </View>
           ) : null}
+          <Button title="Xem lý do bị loại" variant="secondary" onPress={() => scrollRef.current?.scrollTo({ y: Math.max(0, reasonsY - 8), animated: true })} />
           <Button title="Xem lịch chiếu" variant="secondary" onPress={() => router.push({ pathname: '/admin/schedule', params: { date: r.startDate } })} />
         </Card>
 
@@ -130,6 +135,7 @@ export default function RunReport() {
           ))}
         </Card>
 
+        <View onLayout={(e) => setReasonsY(e.nativeEvent.layout.y)}>
         <Card style={{ gap: spacing.md }}>
           <AppText style={{ fontSize: 15, fontWeight: '700' }}>Lý do bị loại</AppText>
           {rejected.length ? rejected.map(([k, n]) => <BarRow key={k} label={SKIP_REASON_LABEL[k] ?? k} value={n} max={maxRejected} />) : <AppText variant="caption">Không có ứng viên bị loại.</AppText>}
@@ -145,6 +151,7 @@ export default function RunReport() {
             </>
           ) : null}
         </Card>
+        </View>
 
         <Card style={{ gap: spacing.sm }}>
           <AppText style={{ fontSize: 15, fontWeight: '700' }}>Mẫu ứng viên bị loại (điểm cao nhất)</AppText>

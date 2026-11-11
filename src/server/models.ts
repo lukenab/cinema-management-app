@@ -334,6 +334,8 @@ export interface GenerationRunDoc {
     clusterId: number;
     selected: number;
     rejected: number;
+    /** Why the rejected candidates were rejected, per reason. */
+    rejectedReasons?: Partial<Record<SkipReason, number>>;
     /** Days the pairing was skipped before any slot was built, and why. */
     excludedDays: number;
     excludedReasons: Partial<Record<SkipReason, number>>;

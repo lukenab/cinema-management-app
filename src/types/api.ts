@@ -488,6 +488,8 @@ export interface SchedulingMovieResult {
     name: string;
     selected: number;
     rejected: number;
+    /** Why those candidates were rejected, per reason (absent on older runs). */
+    rejectedReasons?: Partial<Record<SkipReason, number>>;
     excludedDays: number;
     excludedReason?: SkipReason;
     /** Days the cinema may show the movie in this run (release plan inside the chosen dates). */

@@ -215,6 +215,13 @@ export async function runScheduling(
   const rejectedBy = tally<string>(
     allRejected.map((r) => `${r.candidate.movieId}|${r.candidate.clusterId}`),
   );
+  const rejectedReasonsBy = new Map<string, Partial<Record<SkipReason, number>>>();
+  for (const x of allRejected) {
+    const key = `${x.candidate.movieId}|${x.candidate.clusterId}`;
+    const reasons = rejectedReasonsBy.get(key) ?? {};
+    reasons[x.reason] = (reasons[x.reason] ?? 0) + 1;
+    rejectedReasonsBy.set(key, reasons);
+  }
   const excludedBy = new Map<string, Partial<Record<SkipReason, number>>>();
   for (const e of built.exclusions) {
     const key = `${e.movieId}|${e.clusterId}`;
@@ -232,6 +239,7 @@ export async function runScheduling(
         clusterId,
         selected: selectedBy.get(key) ?? 0,
         rejected: rejectedBy.get(key) ?? 0,
+        rejectedReasons: rejectedReasonsBy.get(key) ?? {},
         excludedDays: Object.values(excludedReasons).reduce(
           (sum, n) => sum + (n ?? 0),
           0,
@@ -473,6 +481,8 @@ async function runDetail(db: Db, r: GenerationRunDoc) {
         name: clusterNameOf(clusterId),
         selected,
         rejected: cell?.rejected ?? 0,
+        /** Per reason; absent on runs made before the report kept it. */
+        rejectedReasons: cell?.rejectedReasons,
         excludedDays: cell?.excludedDays ?? 0,
         excludedReason,
         from: cell?.from,

@@ -1,15 +1,15 @@
 {
   "api": "http://localhost:8099",
-  "ranAt": "2026-11-11T09:28:47.502Z",
-  "movieId": 18,
-  "runId": 9,
+  "ranAt": "2026-11-11T10:04:07.426Z",
+  "movieId": 20,
+  "runId": 13,
   "results": [
     {
       "id": "A1",
       "group": "A. Public",
       "name": "GET /api/public/cinemas returns 5 Cần Thơ cinemas with hours, rooms, demand",
       "ok": true,
-      "ms": 59,
+      "ms": 90,
       "detail": "CinePrime Ninh Kiều (4 phòng), CinePrime Cái Răng (3 phòng), CinePrime Bình Thủy (3 phòng), CinePrime Ô Môn (2 phòng), CinePrime Thốt Nốt (2 phòng)"
     },
     {
@@ -17,15 +17,15 @@
       "group": "A. Public",
       "name": "GET /api/public/movies?clusterId=1 lists movies with a display status",
       "ok": true,
-      "ms": 393,
-      "detail": "13 phim (8 đang chiếu)"
+      "ms": 1000,
+      "detail": "14 phim (9 đang chiếu)"
     },
     {
       "id": "A3",
       "group": "A. Public",
       "name": "Unknown movie id → 404 with Vietnamese message",
       "ok": true,
-      "ms": 168,
+      "ms": 441,
       "detail": "Không tìm thấy phim."
     },
     {
@@ -33,7 +33,7 @@
       "group": "A. Public",
       "name": "Booking policy, promotions and concessions are public",
       "ok": true,
-      "ms": 393,
+      "ms": 971,
       "detail": "giữ ghế 480s, 3 khuyến mãi, 13 món"
     },
     {
@@ -41,7 +41,7 @@
       "group": "A. Public",
       "name": "Old Java-style URLs are gone (e.g. /api/movies/public, /api/payments/fake-pay)",
       "ok": true,
-      "ms": 1362,
+      "ms": 3086,
       "detail": "404 / 404"
     },
     {
@@ -49,7 +49,7 @@
       "group": "B. Auth & roles",
       "name": "Admin and demo customer can sign in",
       "ok": true,
-      "ms": 658,
+      "ms": 969,
       "detail": "admin, user"
     },
     {
@@ -57,7 +57,7 @@
       "group": "B. Auth & roles",
       "name": "Wrong password → 401",
       "ok": true,
-      "ms": 311,
+      "ms": 422,
       "detail": ""
     },
     {
@@ -65,7 +65,7 @@
       "group": "B. Auth & roles",
       "name": "/api/me without a token → 401",
       "ok": true,
-      "ms": 205,
+      "ms": 673,
       "detail": ""
     },
     {
@@ -73,7 +73,7 @@
       "group": "B. Auth & roles",
       "name": "Customer calling an admin route → 403",
       "ok": true,
-      "ms": 319,
+      "ms": 721,
       "detail": ""
     },
     {
@@ -81,39 +81,39 @@
       "group": "B. Auth & roles",
       "name": "Register a second customer (for the seat-conflict test)",
       "ok": true,
-      "ms": 712,
-      "detail": "qa_mwbx1c2p"
+      "ms": 1343,
+      "detail": "qa_mwbyas8g"
     },
     {
       "id": "C1",
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "TMDB now-playing list (admin) marks movies already imported",
       "ok": true,
-      "ms": 1769,
-      "detail": "27 phim, chọn \"Shaun the Sheep: \"Quái Lạ\" Ghé Nhà\" (#1477104)"
+      "ms": 2220,
+      "detail": "27 phim, chọn \"Chuyện Nàng Công Chúa Kaguya\" (#149871)"
     },
     {
       "id": "C2",
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "TMDB preview auto-fills title, runtime, age rating, cast, popularity",
       "ok": true,
-      "ms": 573,
-      "detail": "81 phút, P, độ phổ biến 55"
+      "ms": 1057,
+      "detail": "137 phút, P, độ phổ biến 43"
     },
     {
       "id": "C3",
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Import creates a DRAFT (not public)",
       "ok": true,
-      "ms": 846,
-      "detail": "movieId 18, thiếu: không"
+      "ms": 1632,
+      "detail": "movieId 20, thiếu: không"
     },
     {
       "id": "C4",
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Importing the same TMDB movie again → 409",
       "ok": true,
-      "ms": 233,
+      "ms": 291,
       "detail": ""
     },
     {
@@ -121,7 +121,7 @@
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Invalid edit (runtime 10 min) → 400",
       "ok": true,
-      "ms": 230,
+      "ms": 1049,
       "detail": ""
     },
     {
@@ -129,7 +129,7 @@
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Release plan for a DRAFT movie → 409",
       "ok": true,
-      "ms": 392,
+      "ms": 1126,
       "detail": "Chỉ phim đã duyệt mới được mở kế hoạch phát hành."
     },
     {
@@ -137,15 +137,15 @@
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Edit: release today, 2D+3D, priority 85 (runtime and age rating kept from TMDB)",
       "ok": true,
-      "ms": 477,
-      "detail": "81 phút, 2D/3D"
+      "ms": 589,
+      "detail": "137 phút, 2D/3D"
     },
     {
       "id": "C8",
       "group": "C. Movie lifecycle (TMDB → draft → approved)",
       "name": "Approve → APPROVED, still hidden without a release plan",
       "ok": true,
-      "ms": 604,
+      "ms": 1425,
       "detail": "APPROVED, public 404"
     },
     {
@@ -153,15 +153,15 @@
       "group": "D. Release plans",
       "name": "Open plans at Ninh Kiều + Cái Răng",
       "ok": true,
-      "ms": 597,
-      "detail": "#72 CinePrime Ninh Kiều, #73 CinePrime Cái Răng"
+      "ms": 651,
+      "detail": "#79 CinePrime Ninh Kiều, #80 CinePrime Cái Răng"
     },
     {
       "id": "D2",
       "group": "D. Release plans",
       "name": "Duplicate plan for the same cinema is skipped with a reason",
       "ok": true,
-      "ms": 318,
+      "ms": 393,
       "detail": "Rạp đã có kế hoạch cho phim này."
     },
     {
@@ -169,7 +169,7 @@
       "group": "D. Release plans",
       "name": "Movie shows as \"Sắp chiếu\" at Ninh Kiều (open plan, no showtimes) and not at Bình Thủy",
       "ok": true,
-      "ms": 526,
+      "ms": 678,
       "detail": "NK: COMING_SOON, BT: ẩn"
     },
     {
@@ -177,7 +177,7 @@
       "group": "D. Release plans",
       "name": "Invalid transition (OPEN → PLANNED) → 409",
       "ok": true,
-      "ms": 364,
+      "ms": 1213,
       "detail": ""
     },
     {
@@ -185,8 +185,8 @@
       "group": "E. Automatic scheduling",
       "name": "Run for the movie at Ninh Kiều, Cái Răng, Bình Thủy (tomorrow + 1 day), not published",
       "ok": true,
-      "ms": 945,
-      "detail": "28 chọn / 1120 ứng viên, 1092 loại, 2 không đủ điều kiện, 493 ms"
+      "ms": 1197,
+      "detail": "26 chọn / 1040 ứng viên, 1014 loại, 2 không đủ điều kiện, 553 ms"
     },
     {
       "id": "E2",
@@ -194,14 +194,14 @@
       "name": "Report adds up: candidates = selected + rejected; per-cinema and per-day sums match",
       "ok": true,
       "ms": 0,
-      "detail": "CLEANUP_BUFFER_CONFLICT=184, SAME_MOVIE_START_STAGGER_CONFLICT=34, MAXIMUM_ROOM_SHARE_REACHED=200, MAX_DAILY_SHOWS_PER_MOVIE_REACHED=674"
+      "detail": "CLEANUP_BUFFER_CONFLICT=302, SAME_MOVIE_START_STAGGER_CONFLICT=42, MAXIMUM_ROOM_SHARE_REACHED=452, MAX_DAILY_SHOWS_PER_MOVIE_REACHED=218"
     },
     {
       "id": "E3",
       "group": "E. Automatic scheduling",
       "name": "Bình Thủy (no release plan) is excluded with MOVIE_NOT_AVAILABLE",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "detail": "MOVIE_NOT_AVAILABLE=2"
     },
     {
@@ -209,23 +209,23 @@
       "group": "E. Automatic scheduling",
       "name": "Generated showtimes: SCHEDULED, inside opening hours, cleanup ≥15 min per room, stagger ≥20 min, ≤ daily max, 3D only in 3D rooms",
       "ok": true,
-      "ms": 1312,
-      "detail": "28 suất kiểm tra, 0 vi phạm"
+      "ms": 2282,
+      "detail": "26 suất kiểm tra, 0 vi phạm"
     },
     {
       "id": "E5",
       "group": "E. Automatic scheduling",
       "name": "Prices snapshotted from the price book (VIP = ×1.2, couple = ×1.15, weekend/evening rates)",
       "ok": true,
-      "ms": 599,
-      "detail": "12:00 2D: thường 75000, VIP 90000, đôi 86000"
+      "ms": 1520,
+      "detail": "08:30 2D: thường 65000, VIP 78000, đôi 75000"
     },
     {
       "id": "E6",
       "group": "E. Automatic scheduling",
       "name": "Unpublished showtimes are not bookable by customers",
       "ok": true,
-      "ms": 229,
+      "ms": 1033,
       "detail": ""
     },
     {
@@ -233,15 +233,15 @@
       "group": "E. Automatic scheduling",
       "name": "Running the same input again does not double-book rooms or exceed the daily maximum",
       "ok": true,
-      "ms": 749,
-      "detail": "0 suất mới (lấp chỗ trống), EXISTING_SHOWTIME_CONFLICT=356"
+      "ms": 908,
+      "detail": "0 suất mới (lấp chỗ trống), EXISTING_SHOWTIME_CONFLICT=468"
     },
     {
       "id": "E8",
       "group": "E. Automatic scheduling",
       "name": "Discard run #2 removes only its unpublished showtimes",
       "ok": true,
-      "ms": 558,
+      "ms": 1501,
       "detail": "xoá 0, trạng thái DISCARDED"
     },
     {
@@ -249,23 +249,23 @@
       "group": "E. Automatic scheduling",
       "name": "Publish run #1 opens its showtimes; movie becomes \"Đang chiếu\" at Ninh Kiều",
       "ok": true,
-      "ms": 1018,
-      "detail": "mở bán 28 suất"
+      "ms": 1952,
+      "detail": "mở bán 26 suất"
     },
     {
       "id": "E10",
       "group": "E. Automatic scheduling",
       "name": "Run history lists the run; run detail has samples of rejected candidates",
       "ok": true,
-      "ms": 624,
-      "detail": "154 mẫu, vd. 17:15 Phòng 4: CLEANUP_BUFFER_CONFLICT"
+      "ms": 887,
+      "detail": "160 mẫu, vd. 17:15 Phòng 4: CLEANUP_BUFFER_CONFLICT"
     },
     {
       "id": "E10a",
       "group": "E. Automatic scheduling",
       "name": "Eligibility: the movie is eligible at Ninh Kiều + Cái Răng but not at Bình Thủy alone",
       "ok": true,
-      "ms": 577,
+      "ms": 777,
       "detail": "Chưa có kế hoạch phát hành tại các rạp đã chọn. Phim đang khai thác tại: Ninh Kiều, Cái Răng."
     },
     {
@@ -273,23 +273,23 @@
       "group": "E. Automatic scheduling",
       "name": "A run with a movie that has no plan at the chosen cinemas is refused (409, code 3204) and creates nothing",
       "ok": true,
-      "ms": 979,
-      "detail": "Phim \"Shaun the Sheep: \"Quái Lạ\" Ghé Nhà\" chưa đủ điều kiện tạo suất: Chưa có kế hoạch phát hành tại các rạp đã chọn. Phim đang khai thác tại: Ninh Kiều, Cái Răng."
+      "ms": 1125,
+      "detail": "Phim \"Chuyện Nàng Công Chúa Kaguya\" chưa đủ điều kiện tạo suất: Chưa có kế hoạch phát hành tại các rạp đã chọn. Phim đang khai thác tại: Ninh Kiều, Cái Răng."
     },
     {
       "id": "E10c",
       "group": "E. Automatic scheduling",
       "name": "Report lists each movie per cinema and per day, and every showtime that was created",
       "ok": true,
-      "ms": 295,
-      "detail": "CREATED: Ninh Kiều 16, Cái Răng 12; 28 suất liệt kê"
+      "ms": 347,
+      "detail": "CREATED: Ninh Kiều 16, Cái Răng 10; 26 suất liệt kê"
     },
     {
       "id": "E11",
       "group": "E. Automatic scheduling",
       "name": "Validation: more than 14 days → 400; no approved movie → 409",
       "ok": true,
-      "ms": 414,
+      "ms": 447,
       "detail": "Mỗi lần chỉ tạo tối đa 14 ngày. / Chưa chọn phim đã duyệt nào."
     },
     {
@@ -297,7 +297,7 @@
       "group": "F. Price book",
       "name": "Price book has 16 rates (2 day types × 4 dayparts × 2D/3D); weekend > weekday; 3D > 2D",
       "ok": true,
-      "ms": 252,
+      "ms": 247,
       "detail": "tối thường ngày 2D 90000, cuối tuần 105000, 3D 110000"
     },
     {
@@ -305,7 +305,7 @@
       "group": "F. Price book",
       "name": "Invalid price (5.000 ₫) → 400; saving the same book → 200",
       "ok": true,
-      "ms": 476,
+      "ms": 520,
       "detail": "Giá vé tối thiểu 10.000 ₫."
     },
     {
@@ -313,7 +313,7 @@
       "group": "G. Booking & payment",
       "name": "Seat map matches the room layout and carries per-type prices",
       "ok": true,
-      "ms": 293,
+      "ms": 783,
       "detail": "120 ghế, VIP 108000"
     },
     {
@@ -321,7 +321,7 @@
       "group": "G. Booking & payment",
       "name": "Hold 2 VIP seats; same Idempotency-Key returns the same booking",
       "ok": true,
-      "ms": 912,
+      "ms": 1582,
       "detail": "F1, F2 = 216000"
     },
     {
@@ -329,7 +329,7 @@
       "group": "G. Booking & payment",
       "name": "Another customer cannot take the same seats → 409",
       "ok": true,
-      "ms": 486,
+      "ms": 637,
       "detail": "Ghế bạn chọn vừa có người khác giữ. Vui lòng chọn ghế khác."
     },
     {
@@ -337,7 +337,7 @@
       "group": "G. Booking & payment",
       "name": "Half a couple seat → 400",
       "ok": true,
-      "ms": 239,
+      "ms": 325,
       "detail": "Ghế đôi phải được chọn cả hai chỗ."
     },
     {
@@ -345,7 +345,7 @@
       "group": "G. Booking & payment",
       "name": "Booking code is hidden before payment",
       "ok": true,
-      "ms": 264,
+      "ms": 1121,
       "detail": ""
     },
     {
@@ -353,7 +353,7 @@
       "group": "G. Booking & payment",
       "name": "Payment session is a signed VNPay URL returning to /api/payments/vnpay/return",
       "ok": true,
-      "ms": 582,
+      "ms": 1551,
       "detail": "VNPAY, sandbox.vnpayment.vn"
     },
     {
@@ -361,7 +361,7 @@
       "group": "G. Booking & payment",
       "name": "Tampered VNPay return is rejected",
       "ok": true,
-      "ms": 122,
+      "ms": 940,
       "detail": ""
     },
     {
@@ -369,15 +369,15 @@
       "group": "G. Booking & payment",
       "name": "Correctly signed VNPay return confirms the booking; QR code value (booking code) appears",
       "ok": true,
-      "ms": 914,
-      "detail": "CONFIRMED, mã CPT8EWLA"
+      "ms": 1159,
+      "detail": "CONFIRMED, mã CP4W867V"
     },
     {
       "id": "G9",
       "group": "G. Booking & payment",
       "name": "Internal checkout page is off unless PAYMENT_MODE=internal",
       "ok": true,
-      "ms": 110,
+      "ms": 928,
       "detail": ""
     },
     {
@@ -385,15 +385,15 @@
       "group": "H. AI quick booking",
       "name": "\"Tối mai 2 người khoảng 8h, phim gì cũng được\" → ≤3 options with 2 adjacent seats and Combo Đôi",
       "ok": true,
-      "ms": 20366,
-      "detail": "RULES: 20:30 Shaun the Sheep: \"Quái Lạ\" Ghé Nhà [F6,F7]"
+      "ms": 18503,
+      "detail": "AI: 20:15 Chuyện Nàng Công Chúa Kaguya [E5,E6] | 19:45 Chuyện Nàng Công Chúa Kaguya [F6,F7]"
     },
     {
       "id": "H2",
       "group": "H. AI quick booking",
       "name": "Party size and time are read from Vietnamese text (\"đi 4 người lúc 19:30\")",
       "ok": true,
-      "ms": 20349,
+      "ms": 1476,
       "detail": "1 gợi ý, combo Combo Party"
     },
     {
@@ -401,15 +401,15 @@
       "group": "H. AI quick booking",
       "name": "\"Đặt nhanh\" holds the seats and adds the combo in one call",
       "ok": true,
-      "ms": 978,
-      "detail": "đơn 345000 ₫ (F6, F7 + Combo Đôi)"
+      "ms": 1968,
+      "detail": "đơn 345000 ₫ (E5, E6 + Combo Đôi)"
     },
     {
       "id": "H4",
       "group": "H. AI quick booking",
       "name": "Booking the same suggestion again (seats now held) → 409",
       "ok": true,
-      "ms": 530,
+      "ms": 605,
       "detail": ""
     },
     {
@@ -417,7 +417,7 @@
       "group": "I. Plan suspension & archive",
       "name": "Suspending the Ninh Kiều plan suspends unsold showtimes, keeps the sold one, hides the movie there",
       "ok": true,
-      "ms": 1281,
+      "ms": 2486,
       "detail": "tạm dừng 15 suất, suất đã bán vé vẫn mở"
     },
     {
@@ -425,7 +425,7 @@
       "group": "I. Plan suspension & archive",
       "name": "Archiving a movie with sold future tickets → 409",
       "ok": true,
-      "ms": 285,
+      "ms": 1186,
       "detail": "Phim còn 1 đơn đặt vé cho suất chưa chiếu nên chưa thể lưu trữ."
     },
     {
@@ -433,8 +433,8 @@
       "group": "I. Plan suspension & archive",
       "name": "Close the Cái Răng plan (test cleanup)",
       "ok": true,
-      "ms": 688,
-      "detail": "tạm dừng 12 suất"
+      "ms": 865,
+      "detail": "tạm dừng 10 suất"
     }
   ]
 }

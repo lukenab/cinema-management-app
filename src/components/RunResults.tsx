@@ -6,7 +6,7 @@ import { AppText, Badge, Card, Chip, Poster } from '@/components/ui';
 import { formatMoney, formatShortDate } from '@/lib/format';
 import { SHOWTIME_STATUS_LABEL, SHOWTIME_STATUS_TONE, SKIP_REASON_LABEL } from '@/lib/labels';
 import { colors, radius, spacing } from '@/theme';
-import type { MovieOutcome, SchedulingMovieResult, SchedulingRunDetail, SchedulingShowtime } from '@/types/api';
+import type { MovieOutcome, SchedulingMovieResult, SchedulingRunDetail, SchedulingShowtime, SkipReason } from '@/types/api';
 
 const dm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const shortCinema = (name: string) => name.replace('CinePrime ', '');
@@ -17,12 +17,29 @@ const OUTCOME: Record<MovieOutcome, { tone: 'success' | 'warning' | 'danger'; la
   NONE: { tone: 'danger', label: () => 'Không tạo được suất' },
 };
 
+/** "Trùng suất đã có (300) · Trùng phòng (100)": the reasons, most frequent first. */
+function reasonsText(reasons: Partial<Record<SkipReason, number>>) {
+  return (Object.entries(reasons) as [SkipReason, number][])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `${SKIP_REASON_LABEL[k] ?? k} (${n.toLocaleString('vi-VN')})`)
+    .join(' · ');
+}
+
 function CinemaLine({ c, rangeStart }: { c: SchedulingMovieResult['clusters'][number]; rangeStart: string }) {
   const ok = c.selected > 0;
-  const parts = [
-    c.from ? `Khai thác ${c.from > rangeStart ? `từ ${formatShortDate(c.from)}` : 'từ đầu khoảng ngày'}${c.to ? ` đến ${formatShortDate(c.to)}` : ''}` : '',
-    !ok ? (c.rejected ? `${c.rejected} ứng viên đều bị loại, xem mục Lý do bị loại` : c.excludedReason ? (SKIP_REASON_LABEL[c.excludedReason] ?? c.excludedReason) : 'không xếp được suất nào') : '',
-  ].filter(Boolean);
+  const window = c.from ? `Khai thác ${c.from > rangeStart ? `từ ${formatShortDate(c.from)}` : 'từ đầu khoảng ngày'}${c.to ? ` đến ${formatShortDate(c.to)}` : ''}` : '';
+  // What was not scheduled here, and why: shown on the line itself, so nothing has to be looked up further down.
+  const reasons = c.rejectedReasons ? reasonsText(c.rejectedReasons) : '';
+  const why = !ok
+    ? c.rejected
+      ? reasons
+        ? `${c.rejected.toLocaleString('vi-VN')} ứng viên đều bị loại`
+        : `${c.rejected.toLocaleString('vi-VN')} ứng viên đều bị loại (lần tạo cũ, chỉ có tổng hợp ở mục Lý do bị loại cuối báo cáo)`
+      : c.excludedReason
+        ? (SKIP_REASON_LABEL[c.excludedReason] ?? c.excludedReason)
+        : 'không xếp được suất nào'
+    : '';
   return (
     <View style={{ gap: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -30,7 +47,10 @@ function CinemaLine({ c, rangeStart }: { c: SchedulingMovieResult['clusters'][nu
         <AppText style={{ flex: 1, fontSize: 13, fontWeight: '600' }}>{shortCinema(c.name)}</AppText>
         <AppText style={{ fontSize: 13, fontWeight: '700', color: ok ? colors.text : colors.warning }}>{c.selected} suất</AppText>
       </View>
-      {parts.length ? <AppText variant="caption" style={{ marginLeft: 24 }}>{parts.join(' · ')}</AppText> : null}
+      {window ? <AppText variant="caption" style={{ marginLeft: 24 }}>{window}</AppText> : null}
+      {why ? <AppText variant="caption" style={{ marginLeft: 24, color: colors.warning }}>{why}</AppText> : null}
+      {!ok && reasons ? <AppText variant="caption" style={{ marginLeft: 24 }}>Lý do: {reasons}</AppText> : null}
+      {ok && c.rejected && reasons ? <AppText variant="caption" style={{ marginLeft: 24 }}>Không xếp được {c.rejected.toLocaleString('vi-VN')} ứng viên khác: {reasons}</AppText> : null}
     </View>
   );
 }
@@ -135,6 +155,11 @@ export function MovieResults({ r }: { r: SchedulingRunDetail }) {
                 </View>
               ) : null}
             </View>
+            {m.selected === 0 && m.clusters.some((c) => c.applicable && (c.rejectedReasons?.EXISTING_SHOWTIME_CONFLICT ?? 0) > 0) ? (
+              <AppText variant="caption" style={{ color: colors.warning }}>
+                Phòng đã có suất khác trong các ngày này, kể cả suất chờ mở bán của lần tạo trước. Huỷ lần tạo cũ không dùng nữa hoặc chọn ngày khác.
+              </AppText>
+            ) : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
               {m.days.map((d) => {
                 const active = open?.movieId === m.movieId && open.date === d.date;
