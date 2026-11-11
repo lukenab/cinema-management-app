@@ -1,86 +1,108 @@
-# CinePrime Mobile
+# CinePrime
 
-React Native (Expo SDK 58, TypeScript, Expo Router) cinema ticketing app for a chain of five CinePrime cinemas in Cần Thơ
-(Android, Vietnamese UI). The API lives in the same project as Expo Router API Routes (`src/app/api/**/+api.ts`, logic in
-`src/server/`) on MongoDB Atlas, so `npx expo start` serves the app bundle and the API on one port. Two roles: customer and admin.
+A mobile app for booking tickets at a chain of cinemas in Cần Thơ, with a back office for managing movies, release plans, showtimes and prices.
 
-## Features
+## Overview
 
-| Area | What it does |
-|---|---|
-| Customer | Choose a cinema; "Đang chiếu" / "Sắp chiếu" for that cinema; movie detail (trailer, cast); showtimes by day; seat map per room; seat hold (8 min); food & drinks; promotion codes; VNPay payment; "Vé của tôi" with a QR code per ticket; profile |
-| AI quick booking | "Đặt nhanh": the customer writes when and with whom ("tối nay 2 người, phim gì cũng được"); Gemini picks up to 3 showtimes and summarises each movie; the server adds the best adjacent seats and a combo for the group; one tap holds the seats and opens payment |
-| Admin | TMDB import (fields auto-filled, saved as a draft) → review and approve; release plans per cinema; automatic showtime generation (Legacy Greedy) with a report of chosen and rejected candidates; open / suspend / cancel showtimes per cinema; price book per cinema; bookings; customers |
+CinePrime lets customers pick a cinema, browse what is showing there, choose seats, add food and drinks, pay and keep their tickets in the app. Admins import movies from TMDB, decide which cinemas may show them, generate showtimes automatically and set ticket prices. The app runs on Android and its interface is in Vietnamese.
 
-## Run
+## Core Features
+
+- Account registration and sign-in, with customer and admin roles
+- Five cinemas, each with its own opening hours, rooms and prices
+- Movie browsing per cinema ("Đang chiếu" and "Sắp chiếu"), trailers and cast
+- Seat selection with a timed seat hold, food and drinks, promotion codes
+- VNPay payment and tickets with a QR code
+- AI quick booking: describe when and with whom, confirm a ready-made suggestion
+- TMDB import, movie review and approval, release plans per cinema
+- Automatic showtime generation with a report of chosen and rejected candidates
+- Ticket price book by weekday or weekend, time of day, 2D or 3D, and seat type
+- Bookings and customer account administration
+
+## Highlights
+
+- **Movie lifecycle**: TMDB import creates a draft, the admin approves it, and a release plan opens it at a cinema. Customers see it as "Sắp chiếu" until showtimes go on sale.
+- **Automatic scheduling**: a port of the Legacy Greedy optimizer scores every candidate slot and picks showtimes without room overlaps. Each run keeps a report of selected and rejected candidates with the reason.
+- **Pricing**: each cinema has a price book, and a showtime keeps the price it was created with, so later edits never change tickets on sale.
+- **Booking**: a unique index on seat locks makes double booking impossible, and a repeated request with the same `Idempotency-Key` returns the same booking.
+- **AI quick booking**: Gemini only chooses among showtimes the server lists and writes the summaries. Seats and combos are computed by the server, and a rule-based picker answers when Gemini is unavailable.
+
+## Technology Stack
+
+| Layer | Technologies |
+| --- | --- |
+| App | Expo SDK 58, React Native, TypeScript, Expo Router |
+| State and data fetching | Redux Toolkit, RTK Query |
+| API | Expo Router API Routes (`+api.ts`), Zod |
+| Database | MongoDB (Atlas), official Node.js driver |
+| Integrations | TMDB, VNPay, Google Gemini |
+| Development tools | ESLint, TypeScript |
+
+## Project Structure
+
+```text
+CinePrime/
+├── src/
+│   ├── app/          Screens (auth, customer, admin) and API routes (api/)
+│   ├── server/       Server-only logic: database, auth, scheduling, bookings, payments, assistant
+│   ├── store/        Redux store and the RTK Query API slice
+│   ├── components/   Shared UI components
+│   ├── hooks/        Reusable React hooks
+│   ├── lib/          API client, formatting, labels, secure storage
+│   ├── theme/        Colors, spacing and typography
+│   └── types/        Types for API responses
+├── scripts/          Demo data seeding and the end-to-end API test
+├── docs/             Test report and screenshots
+├── assets/           Icons and food photos
+├── app.json          Expo configuration
+└── .env.example      Environment variable template
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js and npm
+- A MongoDB database (for example MongoDB Atlas)
+- A TMDB API key
+- A VNPay sandbox merchant, or `PAYMENT_MODE=internal` to use the built-in checkout page
+- An Android emulator or the Expo Go app
+
+### Run
 
 ```bash
 npm install
-cp .env.example .env.local        # MONGODB_URI, JWT_SECRET, TMDB_API_KEY, VNPAY_*, GEMINI_API_KEY (server-only, never EXPO_PUBLIC_)
-npx expo start --android          # app + API on :8081
-npm run seed:tmdb                 # imports + approves TMDB movies, opens release plans, schedules 7 days at all cinemas
+cp .env.example .env.local    # then fill in the values below
+npx expo start --android      # serves the app and the API on port 8081
+npm run seed:tmdb             # optional: import movies and generate 7 days of showtimes
 ```
 
-- Android emulator reaches the dev server at `http://10.0.2.2:8081` (default in `.env.example`). A physical phone needs your LAN IP.
-- The first request creates indexes, the five cinemas with their rooms and price books, the admin account (`admin` / `admin`) and a
-  demo customer (`user` / `user`, profile complete). Movies from the first version are migrated to APPROVED with open release plans.
-- TMDB is reached through `api.tmdb.org` (alias of `api.themoviedb.org`, which some Vietnamese ISPs reset). Override with `TMDB_API_BASE`.
-- Do not start Metro with `CI=1`: the dev server then rejects the device with `401 Unauthorized`.
-- Tests: `scripts/api-test.mjs` (51 end-to-end API checks). Latest results: [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
+The Android emulator reaches the dev server at `http://10.0.2.2:8081`. A physical phone needs your computer's LAN IP in `EXPO_PUBLIC_API_URL`.
 
-## How it works
+The first request creates the indexes, the cinemas with their rooms and price books, and the demo accounts. End-to-end API checks run with `node --env-file-if-exists=.env.local scripts/api-test.mjs`, and the latest results are in the [test report](docs/TEST_REPORT.md).
 
-- **Cinemas** (`src/server/cinema.ts`): Ninh Kiều, Cái Răng, Bình Thủy, Ô Môn, Thốt Nốt, with opening hours similar to public cinema
-  hours in Cần Thơ (about 08:30–23:30, later on Friday–Sunday), 2–4 rooms each (small 60, standard 80, large 120 seats; VIP rows in the
-  middle, couple seats at the back) and a demand profile (score, minimum and maximum shows per movie per day) used by the scheduler.
-- **Movie lifecycle**: TMDB import → `DRAFT` (title, synopsis, runtime, age rating, cast, trailer, popularity filled in) → the admin
-  checks and approves → `APPROVED`. Customers still do not see it until a **release plan** (right to show the movie at a cinema for a
-  period: `PLANNED → OPEN → SUSPENDED → CLOSED`) is open there: it is "Sắp chiếu" at that cinema, and "Đang chiếu" once it has showtimes on
-  sale. Suspending or closing a plan suspends that movie's unsold future showtimes at the cinema. `ARCHIVED` closes every plan.
-- **Automatic showtimes** (`src/server/scheduling/`, a port of the Java Legacy Greedy optimizer): candidates are built for every day ×
-  cinema × movie × format × room, every 15 minutes within opening hours; each gets a score (movie demand 40 %, cinema demand 25 %, daypart
-  15 %, format 10 %, room-size fit 10 %). The selector first gives each movie/cinema/day its minimum number of shows round-robin, then hands
-  out extra shows by score up to the daily maximum, rejecting candidates that would overlap a room (with 15 min cleaning), start the same
-  movie within 20 min in another room, or put one movie in more than 60 % of the rooms at once. Existing showtimes are respected, so a run
-  can be repeated. Each run is saved with counts per reason, per movie / cinema / day and samples of rejected candidates; its showtimes
-  stay `SCHEDULED` until the admin publishes the run (or discards it).
-- **Prices** (`src/server/pricing.ts`): each cinema has a price book: weekday / weekend (Fri–Sun) × morning / afternoon / evening / late ×
-  2D / 3D, plus multipliers for VIP (1.2) and couple (1.15) seats. Prices are copied onto the showtime when it is created, so editing the
-  book never changes showtimes already on sale.
-- **Seats:** `seat_locks` has a unique index on (showtimeId, seatId), so two customers can never hold the same seat; holds expire (TTL
-  index) and a booking created with the same `Idempotency-Key` returns the booking already created.
-- **Payment:** VNPay. `POST /api/me/bookings/{id}/payment` returns a signed VNPay URL; VNPay sends the browser to
-  `/api/payments/vnpay/return`, which checks the HMAC-SHA512 signature and amount, confirms the booking and shows a page that opens the app
-  on the ticket. The booking code (shown as a QR code on the ticket) is only revealed once paid. `PAYMENT_MODE=internal` swaps VNPay for
-  CinePrime's own checkout page, for environments without VNPay credentials. VNPay sandbox test card: NCB `9704198526191432198`,
-  NGUYEN VAN A, `07/15`, OTP `123456`.
-- **AI quick booking** (`src/server/assistant.ts`): the server lists what is on sale at the cinema that day, Gemini only chooses among
-  those showtime ids and writes the summaries; seats (best block of adjacent seats near the centre, couple seat for two) and combos (Solo /
-  Đôi / Party by group size) are computed by the server. Without `GEMINI_API_KEY`, or when Gemini fails, a rule-based picker reads the time
-  and group size from the text and answers instead.
+### Environment variables
 
-## API layout
+Server variables have no `EXPO_PUBLIC_` prefix, so they are never bundled into the app. Put them in `.env.local`, which git ignores.
 
-Expo Router requires the `+api.ts` suffix: it is how a file in `src/app` is marked as a server route instead of a screen
-([Expo docs](https://docs.expo.dev/router/web/api-routes/)). URLs are grouped by who may call them:
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `MONGODB_URI` | Yes | MongoDB connection string, including the database name |
+| `JWT_SECRET` | Yes | Random string of 64 or more characters for signing tokens |
+| `TMDB_API_KEY` | Yes | Movie import from TMDB |
+| `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` | Yes, unless `PAYMENT_MODE=internal` | VNPay merchant credentials |
+| `GEMINI_API_KEY` | No | AI quick booking. Without it a rule-based picker answers. |
+| `EXPO_PUBLIC_API_URL` | No | API address used by the app. Defaults to `http://10.0.2.2:8081`. |
+| `PUBLIC_BASE_URL` | No | Address VNPay sends the browser back to, when it differs from the one the app called |
+| `PAYMENT_MODE` | No | `internal` replaces VNPay with CinePrime's own checkout page |
 
-| Prefix | Who | Examples |
-|---|---|---|
-| `/api/auth/*` | anyone | `login`, `register`, `refresh`, `logout` |
-| `/api/public/*` | anyone | `cinemas`, `movies?clusterId=`, `movies/{id}/showtimes`, `showtimes/{id}/seats`, `promotions`, `booking-policy` |
-| `/api/me/*` | signed-in customer | `me`, `me/profile`, `me/bookings`, `me/bookings/{id}/payment`, `me/assistant/suggestions` |
-| `/api/payments/*` | the payment browser page | `vnpay/return`, `checkout` (only with `PAYMENT_MODE=internal`) |
-| `/api/admin/*` | admin | `movies`, `tmdb/movies`, `tmdb/imports`, `release-plans`, `scheduling-runs`, `showtimes`, `price-books/{clusterId}`, `bookings`, `customers` |
+### Demo accounts
 
-## Layout
+| Role | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `admin` |
+| Customer | `user` | `user` |
 
-```
-src/app/            routes only: (auth), (customer)/(tabs), booking/…, quick-book, admin/…
-src/app/api/        API Routes (+api.ts), grouped as above
-src/server/         server-only code: MongoDB, auth, cinemas, pricing, release plans, scheduling/, bookings, payments, assistant, TMDB
-src/store/          Redux Toolkit (auth) + RTK Query `api`
-src/hooks/          use-cinema (chosen cinema, remembered), countdown, seat map refresh
-src/lib/            apiClient, jwt, secureStorage, format, labels
-src/components/     ui kit, CinemaPicker, MovieCard, SeatGrid
-scripts/            seed-tmdb.mjs (demo data), api-test.mjs (end-to-end API test)
-```
+They are created on the first request. Change them before any real deployment with `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `DEMO_USERNAME` and `DEMO_PASSWORD`.
+
+For a VNPay sandbox payment, use bank NCB, card `9704198526191432198`, name `NGUYEN VAN A`, expiry `07/15` and OTP `123456`.
