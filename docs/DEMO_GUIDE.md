@@ -95,7 +95,7 @@ Ninh Kiều và Thốt Nốt không có kế hoạch cho phim này, nên phim kh
 | 3.4.1 | Quay lại màn chi tiết phim, bấm **Tạo suất chiếu tự động** | Màn **Tạo suất chiếu tự động** với phim đã được chọn sẵn |
 | 3.4.2 | Đặt **Từ ngày** là hôm nay, chọn **1 ngày** | Dòng tóm tắt hiển thị khoảng ngày |
 | 3.4.3 | Chỉ chọn 3 rạp Cái Răng, Bình Thủy, Ô Môn | Các chip rạp được chọn |
-| 3.4.4 | Chỉ chọn phim vừa tạo trong danh sách phim | Tiêu đề mục hiện `Phim (1 đã chọn)` |
+| 3.4.4 | Trong danh sách phim, chỉ chọn phim vừa tạo | Tiêu đề mục hiện `Phim (1/N đủ điều kiện đã chọn)`. Phim chưa có kế hoạch phát hành tại rạp đã chọn bị **khoá** (biểu tượng khoá, kèm lý do và nút "Mở kế hoạch phát hành") và không chọn được |
 | 3.4.5 | Giữ **Xem báo cáo rồi mở bán**, bấm **Tạo suất chiếu** | Mở màn **Báo cáo tạo lịch** |
 
 ### 3.5. Đọc báo cáo và mở bán
@@ -103,6 +103,8 @@ Ninh Kiều và Thốt Nốt không có kế hoạch cho phim này, nên phim kh
 | # | Thao tác | Kết quả mong đợi |
 | --- | --- | --- |
 | 3.5.1 | Xem thẻ **Tổng quan** | Bốn số: Ứng viên, Được chọn, Bị loại, Không đủ điều kiện. Ứng viên bằng Được chọn cộng Bị loại |
+| 3.5.1a | Xem mục **Kết quả theo phim** | Mỗi phim có nhãn Đã tạo / Tạo một phần / Không tạo được suất, số suất ở từng rạp, số suất theo trạng thái mở bán, và chip số suất theo từng ngày. Bấm một ngày để xem **giờ chiếu theo rạp** (ô giờ có màu theo trạng thái) |
+| 3.5.1b | Xem mục **Suất chiếu đã tạo**, chọn ngày, rạp, phim bằng các chip | Danh sách từng suất gồm giờ, phòng, định dạng, giá ghế thường và trạng thái, gom theo rạp |
 | 3.5.2 | Cuộn xuống **Suất được chọn theo ngày** và **Theo rạp** | Thanh ngang thể hiện số suất mỗi ngày và mỗi rạp |
 | 3.5.3 | Xem **Lý do bị loại** | Số lượng theo từng lý do, ví dụ trùng phòng (có tính thời gian dọn phòng), vượt tỉ lệ phòng chiếu cùng lúc, đủ số suất tối đa mỗi ngày |
 | 3.5.4 | Xem **Mẫu ứng viên bị loại** và lọc theo lý do bằng chip | Giờ, phòng, định dạng, điểm và lý do của từng mẫu |
