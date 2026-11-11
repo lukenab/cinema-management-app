@@ -2,7 +2,7 @@ import { ObjectId, type Db } from "mongodb";
 
 import { HttpError } from "./http";
 import type { UserDoc } from "./models";
-import { accountDto } from "./users";
+import { accountDto, profileDto } from "./users";
 
 const users = (db: Db) => db.collection<UserDoc>("users");
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -48,6 +48,11 @@ async function customer(db: Db, id: string): Promise<UserDoc> {
 
 export async function getCustomer(db: Db, id: string) {
   return accountDto(await customer(db, id));
+}
+
+/** The customer's personal profile, for the admin's customer detail screen. */
+export async function getCustomerProfile(db: Db, id: string) {
+  return profileDto(await customer(db, id));
 }
 
 /** Deactivating also signs the customer out everywhere (their token version moves on). */

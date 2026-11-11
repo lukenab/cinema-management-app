@@ -568,6 +568,12 @@ export const api = createApi({
       }),
       providesTags: ["Accounts"],
     }),
+    getCustomerProfile: build.query<UserProfile, string>({
+      query: (id) => ({
+        url: `/api/admin/customers/${encodeURIComponent(id)}/profile`,
+      }),
+      providesTags: ["Accounts"],
+    }),
     getAccount: build.query<Account, string>({
       query: (id) => ({
         url: `/api/admin/customers/${encodeURIComponent(id)}`,
@@ -656,6 +662,7 @@ export const {
   useGetAllBookingsQuery,
   useSearchAccountsQuery,
   useGetAccountQuery,
+  useGetCustomerProfileQuery,
   useSetAccountStatusMutation,
   useRevokeSessionsMutation,
   useRegisterMutation,

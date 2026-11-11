@@ -6,7 +6,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppText, Badge, Button, Card, ErrorView, LoadingView, Screen } from '@/components/ui';
 import { formatLongDate } from '@/lib/format';
 import { ACCOUNT_STATUS_LABEL, ACCOUNT_STATUS_TONE } from '@/lib/labels';
-import { queryErrorMessage, useGetAccountQuery, useGetProfileQuery, useRevokeSessionsMutation, useSetAccountStatusMutation } from '@/store/api';
+import { queryErrorMessage, useGetAccountQuery, useGetCustomerProfileQuery, useRevokeSessionsMutation, useSetAccountStatusMutation } from '@/store/api';
 import { colors, spacing } from '@/theme';
 
 function Field({ label, value }: { label: string; value?: string }) {
@@ -24,7 +24,7 @@ export default function CustomerDetail() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = decodeURIComponent(raw);
   const account = useGetAccountQuery(id);
-  const profile = useGetProfileQuery(id);
+  const profile = useGetCustomerProfileQuery(id);
   const [setStatus, statusState] = useSetAccountStatusMutation();
   const [revoke, revokeState] = useRevokeSessionsMutation();
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
